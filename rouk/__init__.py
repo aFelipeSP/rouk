@@ -1,5 +1,4 @@
 import os
-
 from flask import Flask
 
 
@@ -23,12 +22,15 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    @app.route("/hello")
-    def hello():
-        return "Hello, World!"
-
     from rouk import db
-
     db.init_app(app)
+
+    from rouk import views
+    app.register_blueprint(views.bp)
+
+
+    def index(path): return send_file(str(Path('static/index.html')))
+    app.add_url_rule('/', 'index', index, defaults={'path': ''})
+    app.add_url_rule('/<path:path>', 'index', index)
 
     return app
