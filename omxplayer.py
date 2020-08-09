@@ -28,6 +28,7 @@ def get_playlist(tx, playlist_id):
     return current, [song.data()['s'] for song in result]
 
 def set_current(tx, playlist_id, current):
+    current += 1
     query = 'MATCH (p:Playlist {id: $id}) SET p.current=$current'
     tx.run(query, id=playlist_id, current=current)
 
@@ -42,6 +43,18 @@ def play_song(data):
     song = data['path']
     return Popen(['omxplayer', '-o', 'alsa', song], stdin=PIPE, stdout=PIPE, bufsize=0)
 
+def next_song(current, song, neo4j, size, playlist_id):
+    current += 1
+    process = None
+    if size == current:
+        with neo4j.session() as session:
+            session.write_transaction(set_current, playlist_id, 0)
+    else:
+        with neo4j.session() as session:
+            session.write_transaction(set_current, playlist_id, current)
+        song = playlist[current]
+        process = play_song(song)
+    return current, song, process
 
 if __name__ == "__main__":
 
@@ -61,17 +74,7 @@ if __name__ == "__main__":
             time.sleep(0.1)
 
             if not process is None and not process.poll() is None:
-                current += 1
-                if size == current:
-                    process = None
-                    with neo4j.session() as session:
-                        session.write_transaction(set_current, playlist_id, 1)
-                else:
-                    with neo4j.session() as session:
-                        session.write_transaction(set_current, playlist_id, current + 1)
-                    song = playlist[current]
-                    process = play_song(song)
-
+                current, song, process = next_song(current, song, neo4j, size, playlist_id)
             try:
                 conn, _ = server.accept()
             except:
@@ -102,21 +105,12 @@ if __name__ == "__main__":
                         process.stdin.write(b'p')
                 elif data == 'n':
                     end_song(process)
-                    current += 1
-                    if size == current:
-                        process = None
-                        with neo4j.session() as session:
-                            session.write_transaction(set_current, playlist_id, 1)
-                    else:
-                        with neo4j.session() as session:
-                            session.write_transaction(set_current, playlist_id, current + 1)
-                        song = playlist[current]
-                        process = play_song(song)
+                    current, song, process = next_song(current, song, neo4j, size, playlist_id)
                 elif data == 'l':
                     end_song(process)
                     current = max(0, current - 1)
                     with neo4j.session() as session:
-                        session.write_transaction(set_current, playlist_id, current + 1)
+                        session.write_transaction(set_current, playlist_id, current)
                     song = playlist[current]
                     process = play_song(song)
                 elif data == 'r':
