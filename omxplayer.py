@@ -27,6 +27,10 @@ def get_playlist(tx, playlist_id):
 
     return current, [song.data()['s'] for song in result]
 
+def set_current(tx, playlist_id, current):
+    query = 'MATCH (p:Playlist {id: $id}) SET p.current=$current'
+    tx.run(query, id=playlist_id, current=current)
+
 def create_server(host, port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((host, port))
@@ -37,6 +41,7 @@ def create_server(host, port):
 def play_song(data):
     song = data['path']
     return Popen(['omxplayer', '-o', 'alsa', song], stdin=PIPE, stdout=PIPE, bufsize=0)
+
 
 if __name__ == "__main__":
 
@@ -59,7 +64,11 @@ if __name__ == "__main__":
                 current += 1
                 if size == current:
                     process = None
+                    with neo4j.session() as session:
+                        session.write_transaction(set_current, playlist_id, 1)
                 else:
+                    with neo4j.session() as session:
+                        session.write_transaction(set_current, playlist_id, current + 1)
                     song = playlist[current]
                     process = play_song(song)
 
@@ -96,12 +105,18 @@ if __name__ == "__main__":
                     current += 1
                     if size == current:
                         process = None
+                        with neo4j.session() as session:
+                            session.write_transaction(set_current, playlist_id, 1)
                     else:
+                        with neo4j.session() as session:
+                            session.write_transaction(set_current, playlist_id, current + 1)
                         song = playlist[current]
                         process = play_song(song)
                 elif data == 'l':
                     end_song(process)
                     current = max(0, current - 1)
+                    with neo4j.session() as session:
+                        session.write_transaction(set_current, playlist_id, current + 1)
                     song = playlist[current]
                     process = play_song(song)
                 elif data == 'r':
