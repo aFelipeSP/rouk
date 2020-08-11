@@ -5,6 +5,13 @@ import socket
 from neo4j import GraphDatabase
 import traceback
 from pathlib import Path
+import instance.config as config
+
+codes = {
+    't': ['Playlist', 'INCLUDED_IN'],
+    'm': ['Album', 'INCLUDED_IN'],
+    'a': ['Artist', 'BY']
+}
 
 def end_song(process):
     if process is None: return
@@ -12,9 +19,9 @@ def end_song(process):
     process.kill()
     process.wait()
 
-def get_playlist(tx, playlist_id):
+def get_playlist(tx, data, id_):
     query = (
-        'MATCH (s:Song)-[i:INCLUDED_IN]->(p:Playlist {id: $id})'
+        'MATCH (s:Song)-[i:$type]->(p:$label {id: $id})'
         'RETURN s, i.track as track ORDER BY track'
     )
 
@@ -57,9 +64,7 @@ def next_song(current, song, neo4j, size, playlist_id):
     return current, song, process
 
 if __name__ == "__main__":
-
-    with Path('instance/config') as f:
-        neo4j_user, neo4j_passwrod = f.read().split('\n')
+    neo4j_user, neo4j_passwrod = [config.NEO4J_USER, config.NEO4J_PASSWORD]
 
     uri = "neo4j://localhost:7687"
     neo4j = GraphDatabase.driver(uri, auth=(neo4j_user, neo4j_passwrod))
@@ -67,7 +72,9 @@ if __name__ == "__main__":
     host, port = "localhost", 9999
     server = create_server(host, port)
 
-    process = current = song = playlist = size = None
+    process = current = song = playlist_id = size = None
+
+    playlist = []
 
     try:
         while True:

@@ -3,28 +3,32 @@
     <div style="flex: 1;overflow: auto">
       <router-view/>
     </div>
+    <n-player />
     <div style="display:flex;align-items:center;background-color:#dddddd">
-      <div
-        v-text="'Home'"
+      <div v-for="(i, page) in pages" :key="i"
+        v-text="page"
         class="nav-btn"
-        @click="$router.push({name: 'home'})"
-        :style="$route.name === 'home' ? 'font-weight:bold' : ''"
-      />
-      <div
-        v-text="'Search'"
-        class="nav-btn"
-        @click="$router.push({name: 'search'})"
-        :style="$route.name === 'search' ? 'font-weight:bold' : ''"
-      />
-      <div
-        v-text="'Library'"
-        class="nav-btn"
-        @click="$router.push({name: 'library'})"
-        :style="$route.name === 'library' ? 'font-weight:bold' : ''"
+        @click="$router.push({name: page.toLowerCase()})"
+        :style="$route.name === page.toLowerCase() ? 'font-weight:bold' : ''"
       />
     </div>
   </div>
 </template>
+
+<script>
+import NPlayer from '@/components/play.vue'
+
+export default {
+  components: {
+    NPlayer
+  },
+  data () {
+    return {
+      pages: ['Home', 'Library']
+    }
+  }
+}
+</script>
 
 <style>
 html, body {

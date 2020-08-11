@@ -4,7 +4,7 @@ from flask import current_app, g
 
 def init_app(app):
     app.config.setdefault('NEO4J_URI', 'neo4j://localhost:7687')
-    app.teardown_appcontext(self.teardown)
+    app.teardown_appcontext(teardown)
 
 def teardown(exception):
     db = g.pop("db", None)
