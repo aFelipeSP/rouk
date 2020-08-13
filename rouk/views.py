@@ -1,6 +1,7 @@
 from flask import Blueprint, current_app, Response, jsonify, request
 from rouk.db import get_db
 import socket
+from uuid import uuid4
 
 bp = Blueprint("api", __name__)
 
@@ -18,20 +19,47 @@ def send_request(msg):
         client.sendall(msg)
         return client.recv(1024)
 
-
 def search_tx(tx, label, text):
     query = (
-        'CALL db.index.fulltext.queryNodes($index_name, $text) YIELD node, score'
-        'RETURN node, score'
+        'CALL db.index.fulltext.queryNodes($index_name, $text) '
+        'YIELD node, score RETURN node, score'
     )
 
     result = tx.run(query, index_name='search'+label, text=text)
     return [song.data() for song in result]
 
-
 def set_current(tx, label, playlist_id, current):
     query = 'MATCH (p:$label {id: $id}) SET p.current=$current'
     tx.run(query, label=label, id=playlist_id, current=current)
+
+def create_playlist(tx, name):
+    playlist_id = str(uuid4())
+    query = 'CREATE (p:Playlist {id: $id, name: $name})'
+    tx.run(query, id=playlist_id, name=name)
+    return playlist_id
+
+def add_songs(tx, playlist_id, songs):
+    query = (
+        'MATCH (p:Playlist {id: $id}) WITH p '
+        'MATCH q =(:Song)-[INCLUDED_IN]->(p) '
+        'WITH p, length(q) as size, $songs as songs '
+        'FOREACH (i IN range(0, $size) | '
+        'MATCH (s:Song {id: songs[size + i]}) '
+        'CREATE (s)-[INCLUDED_IN]->(p)) '
+    )
+    tx.run(query, id=playlist_id, songs=songs, size=len(songs))
+
+def delete_playlist(tx, playlist_id):
+    query = 'MATCH (p:Playlist {id: $id}) DETACH DELETE p'
+    tx.run(query, id=playlist_id)
+
+def get(tx, label, id_):
+    result = tx.run('MATCH (p:$label {id: $id}) RETURN p', label=label, id=id_)
+    return result.single().data()['p']
+
+def get_all(tx, label):
+    result = tx.run('MATCH (p:$label) RETURN p', label)
+    return [item.data()['p'] for item in result]
 
 @bp.route('/last', methods=['POST'])
 def last():
@@ -53,13 +81,23 @@ def repeat():
     send_request('r')
     return Response('OK', 200)
 
-@bp.route('/search/<string:label>/<string:text>')
+@bp.route('/search/<string:label>')
 def search(label, text):
     neo4j = get_db()
+    if not label in ['song', 'playlist', 'artist']:
+        return Response('wrong "label" value', 400)
+    query = request.args.get('q', None)
     with neo4j.session() as session:
-        data = session.read_transaction(
-            search_tx, label, text)
+        if query is None:
+            data = session.read_transaction(get_all, label.capitalize())
+        else:
+            data = session.read_transaction(search_tx, label, text)
     return jsonify(data)
+
+@bp.route('/play/song/<string:path>', methods=['POST'])
+def play_song(path):
+    send_request('s:{}'.format(path))
+    return Response('OK', 200)
 
 @bp.route('/play/<string:label>/<string:id>', methods=['POST'])
 def play(label, id_):
@@ -71,3 +109,74 @@ def play(label, id_):
             session.write_transaction(set_current, label.capitalize(), id_, current)
     send_request('{}:{}'.format(codes[label], id_))
     return Response('OK', 200)
+
+@bp.route('/playlist', methods=['POST'])
+def playlist():
+    data = request.json
+    name = data.get('name', None)
+    if name is None: return Response('"name" is required', 400)
+    neo4j = get_db()
+    with neo4j.session() as session:
+        playlist_id = session.write_transaction(create_playlist, name)
+
+    return jsonify(playlist_id=playlist_id)
+
+@bp.route('/playlist/<string:id_>', methods=['PUT'])
+def playlist_songs(id_):
+    data = request.json
+    songs = data.get('songs', None)
+    if songs is None: return Response('"songs" array is required', 400)
+    neo4j = get_db()
+    with neo4j.session() as session:
+        session.write_transaction(add_songs, id_, songs)
+
+    return Response('OK', 200)
+
+@bp.route('/playlist/<string:id_>', methods=['DELETE'])
+def delete_playlist_(id_):
+    neo4j = get_db()
+    with neo4j.session() as session:
+        session.write_transaction(delete_playlist, id_)
+    return Response('OK', 200)
+
+@bp.route('/playlist')
+def playlist_get_all():
+    with get_db().session() as session:
+        result = session.read_transaction(get_all, 'Playlist')
+    return jsonify(result)
+
+@bp.route('/song')
+def song_get_all():
+    with get_db().session() as session:
+        result = session.read_transaction(get_all, 'Song')
+    return jsonify(result)
+
+@bp.route('/artist')
+def artist_get_all():
+    with get_db().session() as session:
+        result = session.read_transaction(get_all, 'Artist')
+    return jsonify(result)
+
+@bp.route('/playlist/<string:id_>')
+def get_playlist(id_):
+    with get_db().session() as session:
+        result = session.read_transaction(get, 'Playlist', id_)
+    return jsonify(result)
+
+@bp.route('/album/<string:id_>')
+def get_album(id_):
+    with get_db().session() as session:
+        result = session.read_transaction(get, 'Album', id_)
+    return jsonify(result)
+
+@bp.route('/artist/<string:id_>')
+def get_artist(id_):
+    with get_db().session() as session:
+        result = session.read_transaction(get, 'Artist', id_)
+    return jsonify(result)
+
+@bp.route('/song/<string:id_>')
+def get_song(id_):
+    with get_db().session() as session:
+        result = session.read_transaction(get, 'Song', id_)
+    return jsonify(result)
