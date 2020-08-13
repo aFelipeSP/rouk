@@ -54,7 +54,8 @@ def create_subfolders(tx, subfolders, path):
 def delete_subfolders(tx, subfolders, path):
     query = (
         'MATCH (r:Folder {path: $path})<-[:IS_SUBFOLDER]-'
-        '(f:Folder)-[:CONTAINS]->(s:Song) WHERE NOT f.path IN $subfolders DETACH DELETE f, s'
+        '(f:Folder)-[:CONTAINS]->(s:Song)'
+        'WHERE NOT f.path IN $subfolders DETACH DELETE f, s'
     )
     tx.run(query, subfolders=subfolders, path=path)
 
@@ -89,8 +90,7 @@ def search_new_songs(queue, neo4j, music_root):
 
         if len_del_songs:
             with neo4j.session() as session:
-                songs = session.write_transaction(delete_song, del_songs, root)
-
+                songs = session.write_transaction(delete_songs, del_songs, root)
 
     return True
 
@@ -102,8 +102,8 @@ def end_song(process):
 
 def get_playlist(tx, data, id_):
     query = (
-        'MATCH (s:Song)-[i:$type]->(p:$label {id: $id})'
-        'RETURN s, i.track as track ORDER BY track'
+        'MATCH (f:Folder)-[C:CONTAINS]->(:Song)-[i:$type]->(p:$label {id: $id})'
+        'RETURN (f.path + c.name) as s, i.track as track ORDER BY track'
     )
 
     query2 = 'MATCH (p:$label {id: $id}) RETURN p.current'
@@ -127,8 +127,7 @@ def create_server(host, port):
     server.settimeout(0)
     return server
 
-def play_song(data):
-    song = data['path']
+def play_song(song):
     return Popen(['omxplayer', '-o', 'alsa', song], stdin=PIPE, stdout=PIPE, bufsize=0)
 
 def next_song(current, song, neo4j, size, playlist_id):
@@ -167,7 +166,8 @@ if __name__ == "__main__":
             time.sleep(0.1)
 
             if not process is None and not process.poll() is None:
-                current, song, process = next_song(current, song, neo4j, size, playlist_id)
+                current, song, process = next_song(
+                    current, song, neo4j, size, playlist_id)
             try:
                 conn, _ = server.accept()
             except:
