@@ -18,7 +18,7 @@
       />
       <icon-clear
         v-if="clearable"
-        class="clear"
+        class="a-input-clear"
         @click="clear"
       />
     </template>
@@ -278,34 +278,39 @@ export default {
 }
 </script>
 
-<style lang="sass">
-.a-input
-  width: 100%
-  > .a-dropdown-clickable
-    width: 100%
-    margin: 0px
-    height: 100%
-    align-items: center
-    display: flex
-    .clear
-      cursor: pointer
-      padding-left: 7px
-      // &:before
-      //   flex: 1
-    .a-input-box
-      width: 100%
-      white-space: pre-line
-      min-height: 1em
-      min-width: 2em
-      flex: 1
-      overflow: hidden
-      &:focus
-        background: none
-        outline: none
-  .a-input-suggestion
-    padding: 10px
-    background-color: white
-    cursor: pointer
-    &.selected
-      background-color: rgba(0,0,0,0.16)  
+<style>
+.a-input {
+  width: 100%;
+}
+.a-input>.a-dropdown-clickable {
+  width: 100%;
+  margin: 0px;
+  height: 100%;
+  align-items: center;
+  display: flex;
+}
+.a-input-clear {
+  cursor: pointer;
+  padding-left: 7px;
+}
+.a-input-box {
+  width: 100%;
+  white-space: pre-line;
+  min-height: 1em;
+  min-width: 2em;
+  flex: 1;
+  overflow: hidden;
+}
+.a-input-box:focus {
+  background: none;
+  outline: none;
+}
+.a-input-suggestion {
+  padding: 10px;
+  background-color: white;
+  cursor: pointer;
+}
+.a-input-suggestion.selected {
+  background-color: rgba(0,0,0,0.16);
+}
 </style>

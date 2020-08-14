@@ -1,22 +1,22 @@
 <template>
   <div id="app">
+    <n-player />
     <div style="flex: 1;overflow: auto">
       <router-view/>
     </div>
-    <n-player />
-    <div style="display:flex;align-items:center;background-color:#dddddd">
-      <div v-for="(i, page) in pages" :key="i"
+    <!-- <div style="display:flex;align-items:center;background-color:#dddddd">
+      <div v-for="(page, i) in pages" :key="i"
         v-text="page"
         class="nav-btn"
         @click="$router.push({name: page.toLowerCase()})"
         :style="$route.name === page.toLowerCase() ? 'font-weight:bold' : ''"
       />
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script>
-import NPlayer from '@/components/play.vue'
+import NPlayer from '@/components/player.vue'
 
 export default {
   components: {
@@ -32,6 +32,7 @@ export default {
 
 <style>
 html, body {
+  margin: 0px;
   height: 100%;
   width: 100%;
 }
@@ -40,10 +41,9 @@ html, body {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #374f68;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   height: 100%;
 }
 

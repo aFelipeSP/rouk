@@ -15,8 +15,8 @@ codes = {
 def send_request(msg):
     conf = current_app.config
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
-        client.connect((conf.PLAYER_HOST, conf.PLAYER_PORT))
-        client.sendall(msg)
+        client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
+        client.sendall(msg.encode('utf8'))
         return client.recv(1024)
 
 def search_tx(tx, label, text):
@@ -29,8 +29,8 @@ def search_tx(tx, label, text):
     return [song.data() for song in result]
 
 def set_current(tx, label, playlist_id, current):
-    query = 'MATCH (p:$label {id: $id}) SET p.current=$current'
-    tx.run(query, label=label, id=playlist_id, current=current)
+    query = 'MATCH (p:{} {{id: $id}}) SET p.current=$current'.format(label)
+    tx.run(query, id=playlist_id, current=current)
 
 def create_playlist(tx, name):
     playlist_id = str(uuid4())
@@ -54,12 +54,22 @@ def delete_playlist(tx, playlist_id):
     tx.run(query, id=playlist_id)
 
 def get(tx, label, id_):
-    result = tx.run('MATCH (p:$label {id: $id}) RETURN p', label=label, id=id_)
-    return result.single().data()['p']
+    query = 'MATCH (p:{} {{id: $id}}) RETURN p'.format(label)
+    return tx.run(query, id=id_).single().data()['p']
 
 def get_all(tx, label):
-    result = tx.run('MATCH (p:$label) RETURN p', label)
-    return [item.data()['p'] for item in result]
+    query = 'MATCH (p:{}) RETURN p'.format(label)
+    return [item.data()['p'] for item in tx.run(query)]
+
+@bp.route('/update', methods=['POST'])
+def update():
+    send_request('u')
+    return Response('OK', 200)
+
+@bp.route('/random', methods=['POST'])
+def random():
+    send_request('d')
+    return Response('OK', 200)
 
 @bp.route('/last', methods=['POST'])
 def last():
@@ -82,16 +92,18 @@ def repeat():
     return Response('OK', 200)
 
 @bp.route('/search/<string:label>')
-def search(label, text):
+def search(label):
     neo4j = get_db()
-    if not label in ['song', 'playlist', 'artist']:
+    if not label in ['song', 'playlist', 'artist', 'album']:
         return Response('wrong "label" value', 400)
-    query = request.args.get('q', None)
+
+    label = label.capitalize()
+    query = request.args.get('q', '')
     with neo4j.session() as session:
-        if query is None:
-            data = session.read_transaction(get_all, label.capitalize())
+        if query == '':
+            data = session.read_transaction(get_all, label)
         else:
-            data = session.read_transaction(search_tx, label, text)
+            data = session.read_transaction(search_tx, label, query)
     return jsonify(data)
 
 @bp.route('/play/song/<string:path>', methods=['POST'])

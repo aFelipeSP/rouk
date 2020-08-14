@@ -1,98 +1,19 @@
-import os
 import socket
 import time
 import traceback
-from pathlib import Path
 from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
-from tinytag import TinyTag
 
-import instance.config as config
-from neo4j import GraphDatabase
+import click
+from flask import current_app
+from flask.cli import with_appcontext
 
-codes = {
-    't': ['Playlist', 'INCLUDED_IN'],
-    'm': ['Album', 'INCLUDED_IN'],
-    'a': ['Artist', 'BY']
-}
+from rouk.db import get_db
+from rouk.player.update_library import update_library
 
-def add_song(tx, song, root, a):
-    query = (
-        'MERGE (al:Album {name: $album}) '
-        'MERGE (ar:Artist {name: $artist}) '
-        'MERGE (f:Folder {path: $path}) '
-        'CREATE (al)<-[:INCLUDED_IN {track: $track}]-'
-        '(s:Song {name: $title, year: $year, duration: $duration})-[:BY]->(ar) '
-        'CREATE (ar)<-[:BY]-(al) CREATE (f)-[:CONTAINS {name: $song}]->(s)'
-    )
-    tx.run(query, album=a.album, artist=a.artist, path=root, track=a.track,
-        title=a.title, year=a.year, duration=a.duration, song=song)
-
-def delete_songs(tx, songs, path):
-    query = (
-        'WITH $songs as song '
-        'MATCH (s:Song)<-[:CONTAINS {name: $song}]-(f:Folder {path: $path}) '
-        'DETACH DELETE s'
-    )
-    tx.run(query, songs=songs, path=path)
-
-def songs_in_folder(tx, path):
-    query = 'MATCH (:Song)<-[c:CONTAINS]-(:Folder {path: $p}) RETURN c.name as s'
-    return [song.data()['s'] for song in tx.run(query, p=path)]
-
-def create_subfolders(tx, subfolders, path):
-    query = (
-        'WITH $subfolders as subfolders '
-        'UNWIND subfolders as subfolder '
-        'MERGE (r:Folder {path: $path}) '
-        'MERGE (f:Folder {path: subfolder}) '
-        'MERGE (f)-[:IS_SUBFOLDER]->(r)'
-    )
-    tx.run(query, subfolders=subfolders, path=path)
-
-def delete_subfolders(tx, subfolders, path):
-    query = (
-        'MATCH (r:Folder {path: $path})<-[:IS_SUBFOLDER]-'
-        '(f:Folder)-[:CONTAINS]->(s:Song) '
-        'WHERE NOT f.path IN $subfolders DETACH DELETE f, s'
-    )
-    tx.run(query, subfolders=subfolders, path=path)
-
-def update_library(queue, neo4j, music_root):
-    formats = ['m4a', 'mp3', 'wma', 'ogg', 'flac']
-    for root, dirs, files in os.walk(Path(music_root)):
-        try:
-            x = queue.get(False)
-            if x == 'q': return False
-        except:
-            pass
-
-        with neo4j.session() as session:
-            session.write_transaction(create_subfolders, dirs, root)
-            session.write_transaction(delete_subfolders, dirs, root)
-
-        music_files = [ff for ff in files if Path(ff).suffix in formats]
-
-        with neo4j.session() as session:
-            songs = session.read_transaction(songs_in_folder, root)
-        songs_set = set(songs)
-        files_set = set(music_files)
-        new_songs = files_set - songs_set
-        del_songs = songs_set - files_set
-        len_new_songs, len_del_songs = [len(new_songs) > 0, len(del_songs) > 0]
-
-        if len_new_songs:
-            for song in new_songs:
-                attrs = TinyTag.get(song)
-                with neo4j.session() as session:
-                    songs = session.write_transaction(add_song, song, root, attrs)
-
-        if len_del_songs:
-            with neo4j.session() as session:
-                songs = session.write_transaction(delete_songs, del_songs, root)
-
-    return True
+def init_app(app):
+    app.cli.add_command(start_omxplayer)
 
 def end_song(process):
     if process is None: return
@@ -108,8 +29,8 @@ def get_playlist(tx, data, id_):
 
     query2 = 'MATCH (p:{} {{id: $id}}) RETURN p.current'.format(data[0])
 
-    result = tx.run(query, id=playlist_id)
-    cur = tx.run(query2, id=playlist_id)
+    result = tx.run(query, id=id_)
+    cur = tx.run(query2, id=id_)
 
     current = cur.single().value() - 1
 
@@ -130,7 +51,7 @@ def create_server(host, port):
 def play_song(song):
     return Popen(['omxplayer', '-o', 'alsa', song], stdin=PIPE, stdout=PIPE, bufsize=0)
 
-def next_song(current, song, neo4j, size, playlist_id):
+def next_song(current, song, neo4j, size, playlist, playlist_id):
     current += 1
     process = None
     if size == current:
@@ -143,16 +64,16 @@ def next_song(current, song, neo4j, size, playlist_id):
         process = play_song(song)
     return current, song, process
 
-def start_neo4j():
-    neo4j_user, neo4j_passwrod = [config.NEO4J_USER, config.NEO4J_PASSWORD]
-    uri = "neo4j://localhost:7687"
-    neo4j = GraphDatabase.driver(uri, auth=(neo4j_user, neo4j_passwrod))
+@click.command("omxplayer")
+@with_appcontext
+def start_omxplayer():
+    codes = {
+        't': ['Playlist', 'INCLUDED_IN'],
+        'm': ['Album', 'INCLUDED_IN'],
+        'a': ['Artist', 'BY']
+    }
 
-if __name__ == "__main__":
-    neo4j_user, neo4j_passwrod = [config.NEO4J_USER, config.NEO4J_PASSWORD]
-
-    uri = "neo4j://localhost:7687"
-    neo4j = GraphDatabase.driver(uri, auth=(neo4j_user, neo4j_passwrod))
+    neo4j = get_db()
 
     queue = Queue()
 
@@ -169,7 +90,7 @@ if __name__ == "__main__":
 
             if not process is None and not process.poll() is None:
                 current, song, process = next_song(
-                    current, song, neo4j, size, playlist_id)
+                    current, song, neo4j, size, playlist, playlist_id)
             try:
                 conn, _ = server.accept()
             except:
@@ -195,7 +116,7 @@ if __name__ == "__main__":
                     process = play_song(song)
                 elif data == 'u':
                     new_songs_monitor = Thread(target=update_library, daemon=True,
-                        args=[queue, neo4j, config.MUSIC_ROOT])
+                        args=[queue, neo4j, current_app.config['MUSIC_ROOT']])
                     new_songs_monitor.start()
                 elif data == 's':
                     playlist_id = None
@@ -209,7 +130,7 @@ if __name__ == "__main__":
                 elif data == 'n':
                     if playlist_id is None: continue
                     end_song(process)
-                    current, song, process = next_song(current, song, neo4j, size, playlist_id)
+                    current, song, process = next_song(current, song, neo4j, size, playlist, playlist_id)
                 elif data == 'l':
                     if playlist_id is None: continue
                     end_song(process)
@@ -224,7 +145,7 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         print("caught keyboard interrupt, exiting")
-    except Exception as error:
+    except Exception:
         traceback.print_exc()
     finally:
         queue.put('q')

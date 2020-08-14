@@ -25,8 +25,14 @@
 
 <script>
 /* eslint-disable no-console */
+import APortal from './APortal'
+import AOverlay from './AOverlay'
 
 export default {
+  components: {
+    APortal,
+    AOverlay
+  },
   props: {
     value: Boolean,
     sameWidth: Boolean
@@ -82,11 +88,12 @@ export default {
 }
 </script>
 
-<style lang="sass">
-.a-dropdown-box
-  border-radius: 3px
-  box-shadow: shadow(2.5px)
-  position: absolute
-  background-color: white
-  overflow: auto
+<style>
+.a-dropdown-box {
+  border-radius: 3px;
+  box-shadow: shadow(2.5px);
+  position: absolute;
+  background-color: white;
+  overflow: auto;
+}
 </style>
