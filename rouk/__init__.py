@@ -33,9 +33,8 @@ def create_app(test_config=None):
     from rouk import views
     app.register_blueprint(views.bp)
 
-
-    def index(path): return send_file(str(Path('static/index.html')))
-    app.add_url_rule('/', 'index', index, defaults={'path': ''})
-    app.add_url_rule('/<path:path>', 'index', index)
+    # def index(path): return send_file(str(Path('static/index.html')))
+    # app.add_url_rule('/', 'index', index, defaults={'path': ''})
+    # app.add_url_rule('/<path:path>', 'index', index)
 
     return app

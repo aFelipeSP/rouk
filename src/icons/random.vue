@@ -1,6 +1,6 @@
 <template>
   <svg style="display:block" viewBox="0 0 1 1" preserveAspectRatio="none"
-    stroke="currentColor" fill="currentColor"
+    stroke="currentColor" fill="currentColor" @click="$emit('click', $emit)"
   >
     <defs>
       <marker id="arrowhead" markerWidth="1.5" markerHeight="2.4" 

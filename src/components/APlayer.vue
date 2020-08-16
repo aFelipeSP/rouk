@@ -1,11 +1,11 @@
 <template>
   <div class="player">
-    <div class="player-button" @click="update()"><icon-update /></div>
-    <div class="player-button" @click="random()"><icon-random /></div>
-    <div class="player-button" @click="last()"><icon-last /></div>
-    <div class="player-play" @click="togglePlay()"> <icon-play /></div>
-    <div class="player-button" @click="next()"><icon-next /></div>
-    <div class="player-button" @click="repeat()"><icon-repeat /></div>
+    <div class="player-button" @click="update"><icon-update /></div>
+    <div class="player-button" @click="random"><icon-random /></div>
+    <div class="player-button" @click="last"><icon-last /></div>
+    <div class="player-play" @click="togglePlay"> <icon-play /></div>
+    <div class="player-button" @click="next"><icon-next /></div>
+    <div class="player-button" @click="repeat"><icon-repeat /></div>
     <div class="player-button"></div>
   </div>
 </template>
@@ -35,19 +35,19 @@ export default {
       axios.post('/update')
     },
     random () {
-
+      axios.post('/random')
     },
     last () {
-
+      axios.post('/last')
     },
     togglePlay () {
-
+      axios.post('/toggle-play')
     },
     next () {
-      
+      axios.post('/next')
     },
     repeat () {
-
+      axios.post('/repeat')
     }
   }
 }
@@ -55,16 +55,16 @@ export default {
 
 <style>
 .player {
-  --player-size: 40px;
+  --player-size: 20px;
   padding: 10px 0px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f1f1f1;
-  box-shadow: 0px -1px 6px 1px rgba(0, 0, 0, 0.425);
 }
 
 .player-button {
+  border-radius: 9999999px;
   padding: 4vw;
   flex: 1;
   cursor: pointer;
@@ -87,7 +87,7 @@ export default {
   background-color: #7e97af;
 }
 
-@media only screen and (min-width: 600px) {
+@media only screen and (min-width: 300px) {
   .player-button {
     padding: calc(var(--player-size)*0.6);
     flex: 0 1 auto;

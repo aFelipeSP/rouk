@@ -221,12 +221,15 @@ export default {
     },
     setCurrentCursorPosition(count) {
       let node = this.$refs.text
-      if (node.firstChild == null) return
       let selection = window.getSelection()
       let range = document.createRange()
       range.selectNode(node)
       range.setStart(node, 0)
-      range.setEnd(node.firstChild, count)
+      if (node.firstChild == null) {
+        range.setEnd(node, 0)
+      } else {
+        range.setEnd(node.firstChild, count)
+      }
       range.collapse(false)
       selection.removeAllRanges()
       selection.addRange(range)
@@ -272,7 +275,8 @@ export default {
       this.focus()
     },
     focus () {
-      this.setCurrentCursorPosition(this.$refs.text.firstChild.length)
+      let text = this.$refs.text
+      this.setCurrentCursorPosition(((text.firstChild || {}).length) || 0)
     }
   }
 }

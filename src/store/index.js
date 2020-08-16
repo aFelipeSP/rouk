@@ -5,11 +5,11 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    currentSong: null,
+    playing: false,
   },
   mutations: {
-  },
-  actions: {
-  },
-  modules: {
+    currentSong (state, value) { state.currentSong = value },
+    playing (state, value) { state.playing = value }
   }
 })
