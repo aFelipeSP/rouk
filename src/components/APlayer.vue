@@ -32,22 +32,22 @@ export default {
   },
   methods: {
     update () {
-      axios.post('/update')
+      axios.post('/api/update')
     },
     random () {
-      axios.post('/random')
+      axios.post('/api/random')
     },
     last () {
-      axios.post('/last')
+      axios.post('/api/last')
     },
     togglePlay () {
-      axios.post('/toggle-play')
+      axios.post('/api/toggle-play')
     },
     next () {
-      axios.post('/next')
+      axios.post('/api/next')
     },
     repeat () {
-      axios.post('/repeat')
+      axios.post('/api/repeat')
     }
   }
 }

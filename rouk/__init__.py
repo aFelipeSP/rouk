@@ -5,7 +5,6 @@ from flask_cors import CORS
     
 
 def create_app(test_config=None):
-    """Create and configure an instance of the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
 
     CORS(app)
@@ -30,8 +29,14 @@ def create_app(test_config=None):
     from rouk import db
     db.init_app(app)
 
-    from rouk import views
-    app.register_blueprint(views.bp)
+    from rouk import player
+    player.init_app(app)
+
+    from rouk.views import (
+        album, artist, commands, play, playlist, song, stream
+    )
+    for view in (album, artist, commands, play, playlist, song, stream):
+        app.register_blueprint(view.bp)
 
     # def index(path): return send_file(str(Path('static/index.html')))
     # app.add_url_rule('/', 'index', index, defaults={'path': ''})

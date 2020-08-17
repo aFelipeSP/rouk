@@ -1,7 +1,6 @@
 from flask import Blueprint, current_app, Response, jsonify, request, stream_with_context
 from rouk.db import get_db
 import socket
-from uuid import uuid4
 import time
 
 bp = Blueprint("api", __name__, url_prefix='/api')
@@ -43,10 +42,8 @@ def set_current(tx, label, playlist_id, current):
     tx.run(query, id=playlist_id, current=current)
 
 def create_playlist(tx, name):
-    playlist_id = str(uuid4())
-    query = 'CREATE (p:Playlist {id: $id, name: $name})'
-    tx.run(query, id=playlist_id, name=name)
-    return playlist_id
+    query = 'CREATE (p:Playlist {name: $name}) RETURN ID(p) as id'
+    return tx.run(query, name=name).single().data()['id']
 
 def add_songs(tx, playlist_id, songs):
     query = (

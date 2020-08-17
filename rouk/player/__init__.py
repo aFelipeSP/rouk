@@ -61,7 +61,7 @@ def play_song(song):
 
 def emit_event(subscribers, msg):
     for subscriber in subscribers:
-        subscriber.sendall(msg)
+        subscriber.sendall(msg.encode('utf8'))
 
 def next_song(current, label, song, neo4j, size, playlist, label_id):
     current += 1
@@ -106,11 +106,13 @@ def start_omxplayer():
                 conn = None
 
             if not conn is None:
+                import pdb; pdb.set_trace()
+
                 data = ''
                 while True:
-                    data_ = conn.recv(1024).decode('utf8')
+                    data_ = conn.recv(1024)
                     if not data_: break
-                    data += data_
+                    data += data_.decode('utf8')
 
                 close_conn = True
                 emit = True
@@ -158,7 +160,7 @@ def start_omxplayer():
                     subscribers.append(conn)
                     close_conn = False
                     emit = False
-                
+
                 if close_conn:
                     conn.sendall(b'ok')
                     conn.close()

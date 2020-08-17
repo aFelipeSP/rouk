@@ -91,7 +91,7 @@ export default {
       this.search()
     },
     search () {
-      axios.get(`/api/search/${this.label}?q=${this.searchValue || ''}`).then(
+      axios.get(`/api/${this.label}?q=${this.searchValue || ''}`).then(
         a => {this.data = a.data}
       )
     },

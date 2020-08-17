@@ -5,7 +5,7 @@ from tinytag import TinyTag
 
 def add_song(tx, song, root, a):
     query = (
-        'MERGE (ar:Artist {name: $artist})<-[by:BY]-(al:Album {name: $album})'
+        'MERGE (ar:Artist {name: $artist})<-[by:BY]-(al:Album {name: $album, year: $year})'
         'MERGE (f:Folder {path: $path}) '
         'CREATE (al)<-[:INCLUDED_IN {track: $track}]-'
         '(s:Song {name: $title, year: $year, duration: $duration})-[:BY]->(ar) '
