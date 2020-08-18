@@ -1,8 +1,8 @@
 <template>
-  <div class="playlist">
-    <div class="playlist-name" v-text="playlist.name" />
+  <div class="album">
+    <div class="album-name" v-text="album.name" />
     <div style="font-size:120%;font-weight:bold">Songs</div>
-    <a-list label="song" :data="playlist.songs" />
+    <a-list label="song" :data="album.songs" />
   </div>
 </template>
 
@@ -16,12 +16,12 @@ export default {
   },
   data () {
     return {
-      playlist: null
+      album: null
     }
   },
   mounted () {
     let id = this.$route.params.id
-    axios.get('/api/playlist/'+id).then(res => this.playlist = res.data)
+    axios.get('/api/album/'+id).then(res => this.album = res.data)
   }
 }
 </script>

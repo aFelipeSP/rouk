@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import uuidv4 from 'uuid/v4'
-import router from '@/router'
-import store from '@/store'
+import router from '@/router.js'
+import store from '@/store.js'
 export default {
   props: {
     value: Boolean

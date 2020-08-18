@@ -1,45 +1,11 @@
 <template>
   <div id="app">
-    <div style="box-shadow: 0px -1px 10px 1px rgba(0,0,0,0.3)">
-      <a-song-bar v-if="song != null" :progress="progress" :song="song"/>
-      <a-player />
-    </div>
-    <div style="flex: 1;overflow: auto">
-      <router-view/>
-    </div>
-    <!-- <div style="display:flex;align-items:center;background-color:#dddddd">
-      <div v-for="(page, i) in pages" :key="i"
-        v-text="page"
-        class="nav-btn"
-        @click="$router.push({name: page.toLowerCase()})"
-        :style="$route.name === page.toLowerCase() ? 'font-weight:bold' : ''"
-      />
-    </div> -->
+    <router-view/>
   </div>
 </template>
 
 <script>
-import APlayer from '@/components/APlayer.vue'
-import ASongBar from '@/components/ASongBar.vue'
-
 export default {
-  components: {
-    APlayer,
-    ASongBar
-  },
-  data () {
-    return {
-      pages: ['Home', 'Library']
-    }
-  },
-  computed: {
-    song () {
-      return this.$store.state.currentSong
-    },
-    progress () {
-      return this.$store.state.songProgress
-    }
-  }
 }
 </script>
 
@@ -55,8 +21,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #495057;
-  display: flex;
-  flex-direction: column-reverse;
   height: 100%;
 }
 
@@ -65,7 +29,6 @@ html, body {
   padding: 5px 10px;
   border-radius: 9999999px;
 }
-
 
 /* width */
 ::-webkit-scrollbar {

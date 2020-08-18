@@ -61,7 +61,10 @@ def play_song(song):
 
 def emit_event(subscribers, msg):
     for subscriber in subscribers:
-        subscriber.sendall(msg.encode('utf8'))
+        try:
+            subscriber.sendall(msg.encode('utf8'))
+        except BrokenPipeError:
+            subscribers.remove(subscriber)
 
 def next_song(current, label, song, neo4j, size, playlist, label_id):
     current += 1
@@ -106,11 +109,13 @@ def start_omxplayer():
                 conn = None
 
             if not conn is None:
-                import pdb; pdb.set_trace()
-
+                conn.settimeout(0)
                 data = ''
                 while True:
-                    data_ = conn.recv(1024)
+                    try:
+                        data_ = conn.recv(1024)
+                    except:
+                        data_ = None
                     if not data_: break
                     data += data_.decode('utf8')
 

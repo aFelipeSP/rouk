@@ -28,7 +28,6 @@ def last():
 @bp.route('/toggle-play', methods=['POST'])
 def toggle_play():
     send_request('p')
-    print(23452345)
     return Response('OK', 200)
 
 @bp.route('/next', methods=['POST'])

@@ -1,3 +1,4 @@
+import store from '@/store.js'
 import axios from 'axios'
 
 function initSSE () {
@@ -18,8 +19,8 @@ function initSSE () {
     source.addEventListener('s', function(e) {
       console.log(e.data)
     }, false)
-    source.addEventListener('p', function(e) {
-      console.log(e.data)
+    source.addEventListener('p', function() {
+      store.commit('playing', true)
     }, false)
     source.addEventListener('n', function(e) {
       console.log(e.data)

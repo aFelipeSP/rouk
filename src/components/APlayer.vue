@@ -3,10 +3,14 @@
     <div class="player-button" @click="update"><icon-update /></div>
     <div class="player-button" @click="random"><icon-random /></div>
     <div class="player-button" @click="last"><icon-last /></div>
-    <div class="player-play" @click="togglePlay"> <icon-play /></div>
+    <div class="player-play" @click="togglePlay">
+      <icon-pause v-if="playing"/>
+      <icon-play v-else/>
+    </div>
     <div class="player-button" @click="next"><icon-next /></div>
     <div class="player-button" @click="repeat"><icon-repeat /></div>
-    <div class="player-button"></div>
+    <div class="player-button" @click="addSong"><icon-plus /></div>
+    <a-playlist-song-modal v-model="playlistSongModal" :song="(currentSong || {}).id"/>
   </div>
 </template>
 
@@ -15,9 +19,12 @@
 import IconUpdate from '@/icons/update.vue'
 import IconRandom from '@/icons/random.vue'
 import IconLast from '@/icons/last.vue'
+import IconPause from '@/icons/pause.vue'
 import IconPlay from '@/icons/play.vue'
 import IconNext from '@/icons/next.vue'
 import IconRepeat from '@/icons/repeat.vue'
+import IconPlus from '@/icons/plus.vue'
+import APlaylistSongModal from '@/components/AModal'
 
 import axios from 'axios'
 
@@ -26,9 +33,17 @@ export default {
     IconUpdate,
     IconRandom,
     IconLast,
+    IconPause,
     IconPlay,
     IconNext,
-    IconRepeat
+    IconRepeat,
+    IconPlus,
+    APlaylistSongModal
+  },
+  data () {
+    return {
+      playlistSongModal: false
+    }
   },
   methods: {
     update () {
@@ -48,7 +63,16 @@ export default {
     },
     repeat () {
       axios.post('/api/repeat')
+    },
+    addSong () {
+      if (this.currentSong != null) {
+        this.playlistSongModal = true
+      }
     }
+  },
+  computed: {
+    playing () { return this.$store.state.playing },
+    currentSong () { return this.$store.state.currentSong }
   }
 }
 </script>

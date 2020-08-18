@@ -12,11 +12,11 @@ def stream():
             client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
             client.sendall(b'i')
             while True:
-                data = ''
-                while True:
-                    data_ = client.recv(1024)
-                    if not data_: break
-                    data += data_.decode('utf8')
+                data = client.recv(1024).decode('utf8')
+                # while True:
+                #     data_ = client.recv(1024)
+                #     if not data_: break
+                #     data += data_.decode('utf8')
                 yield 'event:' + data[0] + '\ndata:' + data[2:] + '\n\n'
         except:
             pass
