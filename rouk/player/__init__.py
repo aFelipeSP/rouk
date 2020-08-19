@@ -82,9 +82,10 @@ class Player:
             time = None if self.start_time is None else time.time() - self.start_time,
             playing = self.playing
         ))
+
         for subscriber in self.subscribers:
             try: subscriber.sendall(msg.encode('utf8'))
-            except BrokenPipeError: self.subscribers.remove(subscriber)
+            except: self.subscribers.remove(subscriber)
 
     def set_playlist(self, code, id_):
         info = self.LABEL_CODES[code]
@@ -144,8 +145,8 @@ class Player:
             try: data += conn.recv(1024).decode('utf8')
             except: break
 
-        close_conn = emit = playing = True
-        code, content = [data[0], data[2:]] 
+        close_conn = change_playing = True
+        code, content = [data[0], data[2:]]
 
         if code in self.LABEL_CODES:
             self.set_playlist(code, content)
@@ -161,11 +162,11 @@ class Player:
         elif data == 'p':
             if not self.player_process is None and self.player_process.poll() is None:
                 self.player_process.stdin.write(b'p')
-                playing = not self.playing
+                self.playing = not self.playing
+                change_playing = False
         elif data == 'n':
             if self.playlist_id is None: return
             self.next_song()
-            emit = False
         elif data == 'l':
             if self.playlist_id is None: return
             self.end_song()
@@ -179,18 +180,16 @@ class Player:
         elif data == 'i':
             self.subscribers.append(conn)
             close_conn = False
-            emit = False
+            change_playing = False
 
-        self.playing = playing
+        if change_playing: self.playing = True
 
         if close_conn:
             conn.sendall(b'ok')
             conn.close()
-        
-        if emit:
-            self.emit_state()
 
     def run(self):
+        self.create_server()
         try:
             while True:
                 time.sleep(0.1)

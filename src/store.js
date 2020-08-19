@@ -13,7 +13,6 @@ export default new Vuex.Store({
     playing: false,
     searchLabel: 'playlist',
     searchValue: null
-
   },
   mutations: {
     playlistType (state, value) { state.playlistType = value },

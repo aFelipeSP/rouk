@@ -29,7 +29,7 @@ export default {
       return this.$store.state.song
     },
     progress () {
-      return this.$store.state.songProgress
+      return this.$store.state.time / this.song.duration
     }
   }
 }

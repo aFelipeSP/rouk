@@ -5,9 +5,16 @@ function initSSE () {
     let source = new EventSource(axios.defaults.baseURL + 'api/stream')
   
     source.addEventListener('update', function(e) {
-      let data = JSON.parse(e.data)
-      for (let prop in data) {
-        store.commit(prop, data[prop])
+      let data = null
+      try {
+        data = JSON.parse(e.data)
+      } catch {
+        //
+      }
+      if (data) {
+        for (let prop in data) {
+          store.commit(prop, data[prop])
+        }
       }
     }, false)
   

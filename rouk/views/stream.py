@@ -6,21 +6,18 @@ bp = Blueprint("stream", __name__, url_prefix='/api')
 @bp.route('/stream')
 def stream():
     def fn ():
+        conf = current_app.config
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
+        client.sendall(b'i')
         try:
-            conf = current_app.config
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
-            client.settimeout(0)
-            client.sendall(b'i')
             while True:
-                data = ''
-                while True:
-                    try: data += client.recv(1024).decode('utf8')
-                    except: break
+                data = client.recv(4096).decode('utf8')
                 yield 'event:update\ndata:' + data + '\n\n'
         except:
             pass
         finally:
+            yield 'event:end\n\n'
             client.close()
 
     resp = Response(stream_with_context(fn()))
