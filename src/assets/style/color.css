@@ -1,0 +1,5 @@
+
+.--c-b-green { background-color: green; color: white; }
+.--c-b-green:hover { background-color: rgb(0, 90, 0); }
+.--c-b-red { background-color: red; color: white;}
+.--c-b-red:hover { background-color: rgb(160, 0, 0); }

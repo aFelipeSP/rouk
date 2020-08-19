@@ -1,6 +1,8 @@
+import json
 import socket
 import time
 import traceback
+from pathlib import Path
 from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
@@ -31,19 +33,29 @@ def get_playlist(tx, code, label_id):
     label = LABEL_CODES[code][0]
     type_ = LABEL_CODES[code][1]
     query = (
-        'MATCH (f:Folder)-[c:CONTAINS]->(s:Song)-[i:{}]->(p:{}) WHERE id(p)=$id'
-        ' RETURN s.name as name, s.year as year, s.duration as duration,'
-        'f.path as root, c.name as filename, i.track as track ORDER BY track'
+        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
+        'MATCH (f:Folder)-[c:CONTAINS]->(s)-[i:{}]->(p:{}) WHERE id(p)=$id '
+        'WITH s, i, al, a, f, p, c ORDER BY i.track RETURN collect(id(s) as id,'
+        's.name as name, s.year as year, s.duration as duration,{id: id(a), '
+        'name: a.name} as artist, {id: id(al), name: al.name} as album, '
+        'f.path as root, c.name as filename, i.track as track) as songs, '
+        'p.current as track'
     ).format(type_, label)
 
-    query2 = 'MATCH (p:{}) WHERE id(p)=$id RETURN p.current'.format(label)
+    result = tx.run(query, id=label_id).single().data()
+    current = result['current'] - 1
+    return current, result['songs']
 
-    result = tx.run(query, id=label_id)
-    cur = tx.run(query2, id=label_id)
+def get_song(tx, id_):
+    query = (
+        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist) '
+        'WHERE id(s)=$id MATCH (f:Folder)-[c:CONTAINS]->(s) RETURN id(s) as id,'
+        's.name as name, s.duration as duration, s.year as year, {id: id(a),'
+        'name: a.name} as artist, {id: id(al), name: al.name} as album,'
+        'f.path as root, c.name as filename, i.track as track'
+    )
 
-    current = cur.single().value() - 1
-
-    return current, [song.data() for song in result]
+    return tx.run(query, id=id_).single().data()
 
 def set_current(tx, label, label_id, current):
     query = 'MATCH (p:{}) WHERE id(p)=$id SET p.current=$current'.format(label)
@@ -57,7 +69,8 @@ def create_server(host, port):
     return server
 
 def play_song(song):
-    return Popen(['omxplayer', '-o', 'alsa', song], stdin=PIPE, stdout=PIPE, bufsize=0)
+    file_ = Path(song['root']) / song['filename']
+    return Popen(['omxplayer', '-o', 'alsa', str(file_)], stdin=PIPE, stdout=PIPE, bufsize=0)
 
 def emit_event(subscribers, msg):
     for subscriber in subscribers:
@@ -66,18 +79,27 @@ def emit_event(subscribers, msg):
         except BrokenPipeError:
             subscribers.remove(subscriber)
 
-def next_song(current, label, song, neo4j, size, playlist, label_id):
+def next_song(current, label, song, neo4j, size, playlist, label_id, subscribers):
     current += 1
     process = None
     if size == current:
+        emit_event(subscribers, 'e')
+        playing = False
         with neo4j.session() as session:
             session.write_transaction(set_current, label, label_id, 0)
     else:
         with neo4j.session() as session:
             session.write_transaction(set_current, label, label_id, current)
         song = playlist[current]
+
+        emit_event(subscribers, 'n:' + json.dumps({
+            'id': label_id,
+            'song': song
+        }))
+        playing = True
+
         process = play_song(song)
-    return current, song, process
+    return current, song, process, playing
 
 @click.command("omxplayer")
 @with_appcontext
@@ -90,7 +112,7 @@ def start_omxplayer():
     server = create_server(host, port)
 
     process = current = song = label = label_id = size = new_songs_monitor = None
-
+    playing = False
     playlist = []
 
     subscribers = []
@@ -100,9 +122,8 @@ def start_omxplayer():
             time.sleep(0.1)
 
             if not process is None and not process.poll() is None:
-                emit_event(subscribers, 'e')
-                current, song, process = next_song(
-                    current, label, song, neo4j, size, playlist, label_id)
+                current, song, process, playing = next_song( current, label,
+                    song, neo4j, size, playlist, label_id, subscribers)
             try:
                 conn, _ = server.accept()
             except:
@@ -123,13 +144,18 @@ def start_omxplayer():
                 emit = True
 
                 if data[0] in LABEL_CODES:
-                    label = data[0]
-                    label_id = data[2:]
+                    label = LABEL_CODES[data[0]][0]
+                    _id = data[2:]
                     with neo4j.session() as session:
                         current, playlist = session.read_transaction(
-                            get_playlist, label, label_id)
+                            get_playlist, data[0], _id)
                     
                     song = playlist[current]
+                    data = data[0] + ':' + json.dumps({
+                        'id': data[2:],
+                        'song': song
+                    })
+                    playing = True
                     size = len(playlist)
                     process = play_song(song)
                 elif data == 'u':
@@ -139,28 +165,46 @@ def start_omxplayer():
                     emit = False
                 elif data[0] == 's':
                     label_id = None
-                    song = {'path': data[2:]}
-                    process = play_song(data[2:])
+                    with neo4j.session() as session:
+                        song = session.read_transaction(get_song, data[2:])
+                    playlist = [song]
+                    data = 's:' + json.dumps({
+                        'song': song
+                    })
+                    playing = True
+                    process = play_song(song)
                 elif data == 'q':
                     break
                 elif data == 'p':
                     if not process is None and process.poll() is None:
                         process.stdin.write(b'p')
+                    playing = not playing
+                    data = 'p:' + ('1' if playing else '0')
                 elif data == 'n':
                     if label_id is None: continue
                     end_song(process)
-                    current, song, process = next_song(current, label, song, neo4j, size, playlist, label_id)
+                    current, song, process, playing = next_song(current, label,
+                        song, neo4j, size, playlist, label_id, subscribers)
+                    emit = False
+                    playing = True
                 elif data == 'l':
                     if label_id is None: continue
                     end_song(process)
                     current = max(0, current - 1)
                     with neo4j.session() as session:
-                        session.write_transaction(set_current, label, label_id, current)
+                        session.write_transaction(
+                            set_current, label, label_id, current)
                     song = playlist[current]
+                    data = 'l:'+ json.dumps({
+                        'id': label_id,
+                        'song': song
+                    })
                     process = play_song(song)
+                    playing = True
                 elif data == 'r':
                     end_song(process)
                     process = play_song(song)
+                    playing = True
                 elif data == 'i':
                     subscribers.append(conn)
                     close_conn = False
@@ -182,4 +226,10 @@ def start_omxplayer():
         queue.put('q')
         end_song(process)
         server.close()
+        
+        for subscriber in subscribers:
+            try:
+                subscriber.close()
+            except:
+                pass
         if not new_songs_monitor is None: new_songs_monitor.join()

@@ -5,7 +5,7 @@
       :key="'l' + j"
       class="a-item"
     >
-      <div style="flex:1" @click="goTo(item)">
+      <div style="flex:1" @click="goTo(item.id)">
         <div class="a-item-name" v-text="item.name" />
         <div v-if="['song', 'album'].includes(label)"
           class="a-item-artist" v-text="item.artist"
@@ -28,7 +28,7 @@
 <script>
 import IconPlus from '@/icons/plus'
 import IconPlay from '@/icons/play'
-import APlaylistSongModal from '@/components/AModal'
+import APlaylistSongModal from '@/components/APlaylistSongModal'
 
 import axios from 'axios'
 
@@ -82,6 +82,10 @@ export default {
   align-items: center;
 }
 
+.a-item:hover {
+  background-color: #f0f0f0;
+}
+
 .a-item-name {
   padding: 2px 0px;
 }
@@ -105,7 +109,7 @@ export default {
   box-shadow: 0px 0px 10px 1px rgba(0,0,0,0.2)
 }
 
-.a-item-play:hover {
+.a-item-btn:hover {
   background-color: #dddddd;
 }
 

@@ -7,6 +7,7 @@ import Album from '@/views/Album.vue'
 import Artist from '@/views/Artist.vue'
 import Playlist from '@/views/Playlist.vue'
 import Song from '@/views/Song.vue'
+import Options from '@/views/Options.vue'
 
 Vue.use(VueRouter)
 
@@ -19,7 +20,8 @@ const routes = [
     { path: '/album/:id', name: 'album', component: Album },
     { path: '/artist/:id', name: 'artist', component: Artist },
     { path: '/playlist/:id', name: 'playlist', component: Playlist },
-    { path: '/song/:id', name: 'song', component: Song }
+    { path: '/song/:id', name: 'song', component: Song },
+    { path: '/options', name: 'options', component: Options }
   ]},
   { path: '*', name: 'notFound', component: NotFound }
 ]

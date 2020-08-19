@@ -1,19 +1,19 @@
 <template>
   <div class="library">
-    <div style="box-shadow: 0px 0px 10px 1px rgba(0,0,0,0.3)">
+    <div style="box-shadow: 0px 4px 10px -1px rgba(0,0,0,0.2)">
       <div class="library-search-options">
         <div
           v-for="(label_, i) in labels"
           :key="'l' + i"
           class="library-search-option"
           @click="setLabel(label_)"
-          :style="(label_ === label) ? 'font-weight:bold' : ''"
+          :style="(label_ === searchLabel) ? 'font-weight:bold' : ''"
           v-text="label_"
         />
       </div>
       <a-search-bar v-model="searchValue"/>
     </div>
-    <a-list :label="label" :data="data" />
+    <a-list style="padding:10px" :label="searchLabel" :data="data" />
   </div>
 </template>
 
@@ -30,19 +30,17 @@ export default {
   data () {
     return {
       labels: ['playlist', 'artist', 'song', 'album'],
-      searchValue: null,
-      data: [],
-      label: 'playlist'
+      data: []
     }
   },
   methods: {
     setLabel(label) {
       this.searchValue = null
-      this.label = label
+      this.searchLabel = label
       this.search()
     },
     search () {
-      axios.get(`/api/${this.label}?q=${this.searchValue || ''}`).then(
+      axios.get(`/api/${this.searchLabel}?q=${this.searchValue || ''}`).then(
         a => {this.data = a.data}
       )
     }
@@ -53,6 +51,16 @@ export default {
         this.search()
       },
       immediate: true
+    }
+  },
+  computed: {
+    searchValue: {
+      get () { return this.$store.state.searchValue },
+      set (v) { this.$store.commit('searchValue', v) }
+    },
+    searchLabel: {
+      get () { return this.$store.state.searchLabel },
+      set (v) { this.$store.commit('searchLabel', v) }
     }
   },
   mounted () {

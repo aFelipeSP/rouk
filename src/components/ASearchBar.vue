@@ -1,6 +1,6 @@
 <template>
   <div class="a-search-bar" ref="searchBox" @click="focusInput">
-    <icon-search style="width:25px;margin:15px;"/>
+    <icon-search style="width:1em;margin:0.8em 0.6em;flex:0 0 auto"/>
     <a-input
       ref="searchInput"
       class="a-search-bar-input"
@@ -9,7 +9,7 @@
       :debounce="1000"
     />
     <icon-clear @click="clearSearch"
-      style="width:20px;padding:10px;cursor:pointer"
+      style="width:1em;padding:0.8em;cursor:pointer;flex:0 0 auto"
     />
   </div>
 </template>
@@ -30,7 +30,7 @@ export default {
   },
   methods: {
     clearSearch () {
-      this.searchValue = null
+      this.$emit('input', null)
       this.$refs.searchInput.focus()
     },
     focusInput (ev) {

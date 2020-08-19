@@ -1,5 +1,6 @@
 <template>
   <div class="player">
+    <div class="player-button" @click="home"><icon-home /></div>
     <div class="player-button" @click="update"><icon-update /></div>
     <div class="player-button" @click="random"><icon-random /></div>
     <div class="player-button" @click="last"><icon-last /></div>
@@ -10,12 +11,14 @@
     <div class="player-button" @click="next"><icon-next /></div>
     <div class="player-button" @click="repeat"><icon-repeat /></div>
     <div class="player-button" @click="addSong"><icon-plus /></div>
+    <div class="player-button" @click="options"><icon-dots-v /></div>
     <a-playlist-song-modal v-model="playlistSongModal" :song="(currentSong || {}).id"/>
   </div>
 </template>
 
 
 <script>
+import IconHome from '@/icons/home.vue'
 import IconUpdate from '@/icons/update.vue'
 import IconRandom from '@/icons/random.vue'
 import IconLast from '@/icons/last.vue'
@@ -24,12 +27,14 @@ import IconPlay from '@/icons/play.vue'
 import IconNext from '@/icons/next.vue'
 import IconRepeat from '@/icons/repeat.vue'
 import IconPlus from '@/icons/plus.vue'
-import APlaylistSongModal from '@/components/AModal'
+import IconDotsV from '@/icons/dotsV.vue'
+import APlaylistSongModal from '@/components/APlaylistSongModal'
 
 import axios from 'axios'
 
 export default {
   components: {
+    IconHome,
     IconUpdate,
     IconRandom,
     IconLast,
@@ -38,6 +43,7 @@ export default {
     IconNext,
     IconRepeat,
     IconPlus,
+    IconDotsV,
     APlaylistSongModal
   },
   data () {
@@ -46,6 +52,9 @@ export default {
     }
   },
   methods: {
+    home () {
+      this.$router.push({name: 'home'})
+    },
     update () {
       axios.post('/api/update')
     },
@@ -68,6 +77,9 @@ export default {
       if (this.currentSong != null) {
         this.playlistSongModal = true
       }
+    },
+    options () {
+      this.$router.push({name: 'options'}).catch(() => {})
     }
   },
   computed: {
@@ -101,7 +113,7 @@ export default {
 .player-play {
   padding: 4vw;
   background-color: #a0a8cc;
-  box-shadow: 0px 0px 6px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 0px 12px -2px rgba(0,0,0,0.2);
   cursor: pointer;
   border-radius: 9999999px;
   flex: 1.5;

@@ -171,7 +171,7 @@ def search(label):
         else: data = session.read_transaction(search_tx, label, query)
     return jsonify(data)
 
-@bp.route('/play/song/<string:id_>', methods=['POST'])
+@bp.route('/play/song/<int:id_>', methods=['POST'])
 def play_song(id_):
     send_request('s:'+id_)
     return Response('OK', 200)
@@ -204,7 +204,7 @@ def create_playlist_():
 
     return jsonify(playlist_id=playlist_id)
 
-@bp.route('/playlist/<string:id_>', methods=['PUT'])
+@bp.route('/playlist/<int:id_>', methods=['PUT'])
 def playlist_songs(id_):
     data = request.json
     songs = data.get('songs', None)
@@ -215,14 +215,14 @@ def playlist_songs(id_):
 
     return Response('OK', 200)
 
-@bp.route('/playlist/<string:id_>', methods=['DELETE'])
+@bp.route('/playlist/<int:id_>', methods=['DELETE'])
 def delete_playlist_(id_):
     neo4j = get_db()
     with neo4j.session() as session:
         session.write_transaction(delete_playlist, id_)
     return Response('OK', 200)
 
-@bp.route('/<string:label>/<string:id_>')
+@bp.route('/<string:label>/<int:id_>')
 def get_playlist(label, id_):
     if not label in ['playlist', 'album', 'artist', 'song']:
         return Response('Page not found', 404)

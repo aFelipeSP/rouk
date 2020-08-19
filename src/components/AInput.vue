@@ -228,7 +228,11 @@ export default {
       if (node.firstChild == null) {
         range.setEnd(node, 0)
       } else {
-        range.setEnd(node.firstChild, count)
+        try {
+          range.setEnd(node.firstChild, count)
+        } catch {
+          console.log(345365)
+        }
       }
       range.collapse(false)
       selection.removeAllRanges()

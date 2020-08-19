@@ -5,10 +5,10 @@ bp = Blueprint("album", __name__, url_prefix='/api')
 
 def get_album_tx(tx, id_):
     query = ('MATCH (s:Song)-[i:INCLUDED_IN]->(al:Album)-[:BY]->(a:Artist)'
-        'WHERE id(al)=$id WITH s, i, al, a order by i.track'
+        'WHERE id(al)=$id WITH s, i, al, a order by i.track '
         'RETURN collect({id: id(s), track:i.track, name: s.name,'
         'duration: s.duration, year: s.year}) as songs, al.name as name,'
-        '{artist: a.name, id:id(a)} as artist'
+        '{name: a.name, id:id(a)} as artist'
     )
     return tx.run(query, id=id_).single().data()
 
@@ -36,7 +36,7 @@ def search_albums_():
         else: data = session.read_transaction(search_albums, query)
     return jsonify(data)
 
-@bp.route('/album/<string:id_>')
+@bp.route('/album/<int:id_>')
 def get_album(id_):
     with get_db().session() as session:
         result = session.read_transaction(get_album_tx, id_)

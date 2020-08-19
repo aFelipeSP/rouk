@@ -1,0 +1,6 @@
+
+.btn-rnd {
+    cursor: pointer;
+    padding: 0.5em 1em;
+    border-radius: 9999999px;
+}

@@ -34,7 +34,7 @@ def search():
         else: data = session.read_transaction(search_artists, query)
     return jsonify(data)
 
-@bp.route('/artist/<string:id_>')
+@bp.route('/artist/<int:id_>')
 def get_album(id_):
     with get_db().session() as session:
         result = session.read_transaction(get_artist_tx, id_)

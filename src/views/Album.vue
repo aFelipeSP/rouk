@@ -1,10 +1,16 @@
 <template>
   <div class="album">
     <div class="album-name" v-text="album.name" />
-    <div style="font-size:120%;font-weight:bold">Songs</div>
+    <div class="album-artist" @click="goToArtist">
+      By {{(album.artist || {}).name}}
+    </div>
+    <div class="album-options">
+      <div @click="play" class="btn-rnd --c-b-green">Play</div>
+    </div>
+    <div style="font-size:120%;font-weight:bold;margin:20px 0px;">Songs</div>
     <a-list label="song" :data="album.songs" />
   </div>
-</template>
+</template> 
 
 <script>
 import axios from 'axios'
@@ -16,12 +22,64 @@ export default {
   },
   data () {
     return {
-      album: null
+      album: {}
+    }
+  },
+  methods: {
+    play () {
+      axios.post(`/api/play/album/${this.album.id}`).then(
+        () => console.log('playing album')
+      )
+    },
+    goToArtist () {
+      this.$router.push(
+        { name: 'artist', params: { id: this.album.artist.id } }
+      ).catch(()=>{})
     }
   },
   mounted () {
     let id = this.$route.params.id
-    axios.get('/api/album/'+id).then(res => this.album = res.data)
+    axios.get(`/api/album/${id}`).then(res => this.album = res.data)
   }
 }
 </script>
+
+<style>
+.album {
+  padding: 0px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.album-name {
+  box-sizing: border-box;
+  font-weight: bold;
+  padding-top: 20px;
+  text-align: center;
+  width: 100%;
+  font-size: 150%;
+}
+
+.album-artist {
+  box-sizing: border-box;
+  padding: 7px 0px 20px 0px;
+  text-align: center;
+  width: 100%;
+  font-size: 90%;
+  color: #aaaaaa;
+  cursor: pointer;
+}
+
+.album-artist:hover {
+  color: #777777;
+}
+
+.album-options {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+</style>
