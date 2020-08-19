@@ -5,18 +5,22 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    currentLabel: null,
-    currentPlaylist: null,
-    currentSong: null,
+    playlistType: null,
+    playlistId: null,
+    song: null,
+    track: null,
+    time: null,
     playing: false,
     searchLabel: 'playlist',
     searchValue: null
 
   },
   mutations: {
-    currentLabel (state, value) { state.currentLabel = value },
-    currentPlaylist (state, value) { state.currentPlaylist = value },
-    currentSong (state, value) { state.currentSong = value },
+    playlistType (state, value) { state.playlistType = value },
+    playlistId (state, value) { state.playlistId = value },
+    song (state, value) { state.song = value },
+    track (state, value) { state.track = value },
+    time (state, value) { state.time = value },
     playing (state, value) { state.playing = value },
     searchLabel (state, value) { state.searchLabel = value },
     searchValue (state, value) { state.searchValue = value }

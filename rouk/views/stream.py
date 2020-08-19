@@ -10,14 +10,14 @@ def stream():
             conf = current_app.config
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
+            client.settimeout(0)
             client.sendall(b'i')
             while True:
-                data = client.recv(1024).decode('utf8')
-                # while True:
-                #     data_ = client.recv(1024)
-                #     if not data_: break
-                #     data += data_.decode('utf8')
-                yield 'event:' + data[0] + '\ndata:' + data[2:] + '\n\n'
+                data = ''
+                while True:
+                    try: data += client.recv(1024).decode('utf8')
+                    except: break
+                yield 'event:update\ndata:' + data + '\n\n'
         except:
             pass
         finally:

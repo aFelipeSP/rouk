@@ -59,7 +59,7 @@ export default {
       let text = 'background: linear-gradient(90deg, #bce6be '
       return text + `${this.progress}%, #ffffff00 ${this.progress}%)`
     },
-    song () { return this.$store.state.currentSong },
+    song () { return this.$store.state.song },
     playing () { return this.$store.state.playing },
     duration () { return this.song.duration*1000 }
   },

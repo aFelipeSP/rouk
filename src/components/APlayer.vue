@@ -12,7 +12,7 @@
     <div class="player-button" @click="repeat"><icon-repeat /></div>
     <div class="player-button" @click="addSong"><icon-plus /></div>
     <div class="player-button" @click="options"><icon-dots-v /></div>
-    <a-playlist-song-modal v-model="playlistSongModal" :song="(currentSong || {}).id"/>
+    <a-playlist-song-modal v-model="playlistSongModal" :song="(song || {}).id"/>
   </div>
 </template>
 
@@ -74,7 +74,7 @@ export default {
       axios.post('/api/repeat')
     },
     addSong () {
-      if (this.currentSong != null) {
+      if (this.song != null) {
         this.playlistSongModal = true
       }
     },
@@ -84,7 +84,7 @@ export default {
   },
   computed: {
     playing () { return this.$store.state.playing },
-    currentSong () { return this.$store.state.currentSong }
+    song () { return this.$store.state.song }
   }
 }
 </script>

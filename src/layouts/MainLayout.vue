@@ -26,7 +26,7 @@ export default {
   },
   computed: {
     song () {
-      return this.$store.state.currentSong
+      return this.$store.state.song
     },
     progress () {
       return this.$store.state.songProgress
