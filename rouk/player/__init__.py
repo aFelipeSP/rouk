@@ -32,7 +32,7 @@ def get_playlist(tx, relationship, playlist_type, playlist_id):
 
 def get_song(tx, id_):
     query = (
-        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist) '
+        'MATCH (al:Album)<-[i:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist) '
         'WHERE id(s)=$id MATCH (f:Folder)-[c:CONTAINS]->(s) RETURN id(s) as id,'
         's.name as name, s.duration as duration, s.year as year, {id: id(a),'
         'name: a.name} as artist, {id: id(al), name: al.name} as album,'
