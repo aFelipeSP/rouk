@@ -178,9 +178,10 @@ class Player:
                 self.player_process.stdin.write(b'p')
                 self.playing = not self.playing
                 current_time = time.time()
-                self.time = current_time - self.start_time
                 if self.playing:
                     self.start_time = current_time
+                else:
+                    self.time += current_time - self.start_time
             return
 
         self.end_song()
