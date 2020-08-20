@@ -13,8 +13,9 @@ def init_app(app):
 
 def add_song(tx, song, root, a):
     query = (
-        'MERGE (ar:Artist {name: $artist})<-[by:BY]-(al:Album {name: $album, year: $year})'
-        'MERGE (f:Folder {path: $path}) '
+        'MERGE (ar:Artist {name: $artist}) '
+        'MERGE (ar)<-[by:BY]-(al:Album {name: $album}) '
+        'ON CREATE SET al.year = $year MERGE (f:Folder {path: $path}) '
         'CREATE (al)<-[:INCLUDED_IN {track: $track}]-'
         '(s:Song {name: $title, year: $year, duration: $duration})-[:BY]->(ar) '
         'CREATE (f)-[:CONTAINS {name: $song}]->(s)'
@@ -72,7 +73,13 @@ def update_library(neo4j, music_root):
 
         if len_new_songs:
             for song in new_songs:
-                attrs = TinyTag.get(str(Path(root)/song))
+                try:
+                    attrs = TinyTag.get(str(Path(root)/song))
+                except:
+                    print('could not get metada: ', str(Path(root)/song))
+                    continue
+                if not attrs.artist: attrs.artist = 'Unknown'
+                if not attrs.album: attrs.album = 'Unknown'
                 with neo4j.session() as session:
                     songs = session.write_transaction(add_song, song, root, attrs)
 
