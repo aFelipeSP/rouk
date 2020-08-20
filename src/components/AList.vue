@@ -53,7 +53,7 @@ export default {
   },
   methods: {
     play (id_) {
-      axios.post(`/api/${this.label}/${id_}`)
+      axios.post(`/api/play/${this.label}/${id_}`)
     },
     // eslint-disable-next-line no-unused-vars
     addSong (id_) {
