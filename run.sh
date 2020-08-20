@@ -2,4 +2,4 @@
 export FLASK_APP=~/src/rouk
 fuser -k 9999/tcp
 flask player &
-flask run
+flask run -h 0.0.0.0 -p 14281
