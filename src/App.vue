@@ -1,11 +1,22 @@
 <template>
   <div id="app">
     <router-view/>
+    <a-portal :value="loading">
+      <div class="loader" />
+    </a-portal>
   </div>
 </template>
 
 <script>
+import APortal from '@/components/APortal'
+
 export default {
+  components: {
+    APortal
+  },
+  computed: {
+    loading () { return this.$store.state.loading }
+  }
 }
 </script>
 

@@ -12,7 +12,8 @@ export default new Vuex.Store({
     time: null,
     playing: false,
     searchLabel: 'playlist',
-    searchValue: null
+    searchValue: null,
+    loading: false
   },
   mutations: {
     playlistType (state, value) { state.playlistType = value },
@@ -22,6 +23,7 @@ export default new Vuex.Store({
     time (state, value) { state.time = value },
     playing (state, value) { state.playing = value },
     searchLabel (state, value) { state.searchLabel = value },
-    searchValue (state, value) { state.searchValue = value }
+    searchValue (state, value) { state.searchValue = value },
+    loading (state, value) { state.loading = value }
   }
 })

@@ -2,7 +2,9 @@ import Vue from 'vue'
 import uuidv4 from 'uuid/v4'
 import router from '@/router.js'
 import store from '@/store.js'
+
 export default {
+  name: 'a-portal',
   props: {
     value: Boolean
   },
