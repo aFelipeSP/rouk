@@ -11,7 +11,6 @@ from flask import current_app
 from flask.cli import with_appcontext
 
 from rouk.db import get_db
-from rouk.player.update_library import update_library
 
 def init_app(app):
     app.cli.add_command(start_omxplayer)

@@ -32,6 +32,9 @@ def create_app(test_config=None):
     from rouk import player
     player.init_app(app)
 
+    from rouk import update_library
+    update_library.init_app(app)
+
     from rouk.views import (
         album, artist, commands, play, playlist, song, stream
     )

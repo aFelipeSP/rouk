@@ -1,7 +1,15 @@
 import os
 from pathlib import Path
 
+import click
+from flask import current_app
+from flask.cli import with_appcontext
 from tinytag import TinyTag
+
+from rouk.db import get_db
+
+def init_app(app):
+    app.cli.add_command(update_library_)
 
 def add_song(tx, song, root, a):
     query = (
@@ -43,15 +51,10 @@ def delete_subfolders(tx, subfolders, path):
     )
     tx.run(query, subfolders=subfolders, path=path)
 
-def update_library(queue, neo4j, music_root):
+def update_library(neo4j, music_root):
     formats = ['m4a', 'mp3', 'wma', 'ogg', 'flac']
     for root, dirs, files in os.walk(Path(music_root)):
         dirs = [str(Path(root) / dr) for dr in dirs]
-        try:
-            x = queue.get(False)
-            if x == 'q': return False
-        except:
-            pass
 
         with neo4j.session() as session:
             session.write_transaction(create_subfolders, dirs, root)
@@ -78,3 +81,11 @@ def update_library(queue, neo4j, music_root):
                 songs = session.write_transaction(delete_songs, list(del_songs), root)
 
     return True
+
+@click.command("update-library")
+@with_appcontext
+def update_library_():
+    music_root = current_app.config.get('MUSIC_ROOT')
+    if music_root:
+        neo4j = get_db()
+        update_library(neo4j, music_root)
