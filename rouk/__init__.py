@@ -5,7 +5,7 @@ from flask_cors import CORS
     
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_folder='static')
 
     CORS(app)
 
@@ -38,8 +38,8 @@ def create_app(test_config=None):
     for view in (album, artist, commands, play, playlist, song, stream):
         app.register_blueprint(view.bp)
 
-    # def index(path): return send_file(str(Path('static/index.html')))
-    # app.add_url_rule('/', 'index', index, defaults={'path': ''})
-    # app.add_url_rule('/<path:path>', 'index', index)
+    def index(path): return send_file(str(Path('static/index.html')))
+    app.add_url_rule('/', 'index', index, defaults={'path': ''})
+    app.add_url_rule('/<path:path>', 'index', index)
 
     return app

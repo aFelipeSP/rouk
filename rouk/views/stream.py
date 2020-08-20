@@ -20,8 +20,8 @@ def stream():
             yield 'event:end\n\n'
             client.close()
 
-    resp = Response(stream_with_context(fn()))
-    resp.headers['Content-Type'] = 'text/event-stream'
-    resp.headers['Cache-Control'] = 'no-cache'
-    resp.headers['Connection'] = 'keep-alive'
-    return resp
+    return Response(stream_with_context(fn()), headers={
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    })

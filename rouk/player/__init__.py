@@ -66,6 +66,7 @@ class Player:
 
     def create_server(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((
             current_app.config.get('PLAYER_HOST', 'localhost'), 
             current_app.config.get('PLAYER_PORT', 9999)
@@ -84,8 +85,14 @@ class Player:
         ))
 
         for subscriber in self.subscribers:
-            try: subscriber.sendall(msg.encode('utf8'))
-            except: self.subscribers.remove(subscriber)
+            try:
+                subscriber.sendall(msg.encode('utf8'))
+            except:
+                try:
+                    subscriber.shutdown(socket.SHUT_RDWR)
+                    subscriber.close()
+                except:
+                    pass
 
     def set_playlist(self, code, id_):
         info = self.LABEL_CODES[code]
@@ -136,14 +143,18 @@ class Player:
         ):
             self.next_song()
 
-        try: conn, _ = self.server.accept()
-        except: return
+        try:
+            conn, _ = self.server.accept()
+        except:
+            return
 
         conn.settimeout(0)
         data = ''
         while True:
-            try: data += conn.recv(1024).decode('utf8')
-            except: break
+            try:
+                data += conn.recv(1024).decode('utf8')
+            except:
+                break
 
         close_conn = change_playing = True
         code, content = [data[0], data[2:]]
@@ -186,6 +197,7 @@ class Player:
 
         if close_conn:
             conn.sendall(b'ok')
+            conn.shutdown(socket.SHUT_RDWR)
             conn.close()
 
     def run(self):
@@ -202,11 +214,17 @@ class Player:
             traceback.print_exc()
         finally:
             self.end_song()
+            self.server.shutdown(socket.SHUT_RDWR)
             self.server.close()
+
+            print('server closed')
             
             for subscriber in self.subscribers:
-                try: subscriber.close()
-                except: pass
+                try:
+                    subscriber.shutdown(socket.SHUT_RDWR)
+                    subscriber.close()
+                except:
+                    pass
 
 
 @click.command("player")
