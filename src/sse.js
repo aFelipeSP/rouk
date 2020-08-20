@@ -1,8 +1,8 @@
 import store from '@/store.js'
-import axios from 'axios'
+// import axios from 'axios'
 
 function initSSE () {
-    let source = new EventSource(axios.defaults.baseURL + 'api/stream')
+    let source = new EventSource('api/stream')
   
     source.addEventListener('update', function(e) {
       let data = null
