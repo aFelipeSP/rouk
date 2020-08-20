@@ -17,7 +17,7 @@ def init_app(app):
 
 def get_playlist(tx, relationship, playlist_type, playlist_id):
     query = (
-        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
+        'MATCH (al:Album)<-[i:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
         'MATCH (f:Folder)-[c:CONTAINS]->(s)-[i:{}]->(p:{}) WHERE id(p)=$id '
         'WITH s, i, al, a, f, p, c ORDER BY i.track RETURN collect(id(s) as id,'
         's.name as name, s.year as year, s.duration as duration,{id: id(a), '
@@ -115,7 +115,6 @@ class Player:
         self.end_song()
         if self.playlist_size == self.current_track + 1:
             self.playing = False
-            self.song
             self.current_track = 0
         else:
             self.current_track += 1
@@ -159,13 +158,13 @@ class Player:
         code, content = [data[0], data[2:]]
 
         if code in self.LABEL_CODES:
-            self.set_playlist(code, content)
+            self.set_playlist(code, int(content))
             self.play_song()
         elif data[0] == 's':
             self.playlist_id = None
             self.playlist = None
             with self.neo4j.session() as session:
-                self.song = session.read_transaction(get_song, content)
+                self.song = session.read_transaction(get_song, int(content))
             self.play_song()
         elif data == 'q':
             return 'q'

@@ -1,7 +1,18 @@
 <template>
   <div class="songbar">
     <div class="songbar-back" :style="progress_text" />
-    <div ref="text" class="songbar-text">{{song}}</div>
+    <div ref="text" class="songbar-text">
+      <span class="songbar-text-item">
+        <b>{{song.track}}.&nbsp;{{song.name}}</b>,
+      </span>
+      <span class="songbar-text-item">
+        <b>Artist:&nbsp;</b>{{song.artist.name}},
+      </span>
+      <span class="songbar-text-item">
+        <b>Album:&nbsp;</b>{{song.album.name}}
+      </span>
+      <span class="songbar-text-item"><b>Year:&nbsp;</b>{{song.year}}</span>
+    </div>
   </div>
 </template>
 
@@ -13,22 +24,24 @@ export default {
   data () {
     return {
       scrollStart: null,
-      progress: null,
     }
   },
   methods: {
     scroll (timestamp) {
-      if (this.start == null) this.scrollStart = timestamp
+      if (this.scrollStart == null) this.scrollStart = timestamp
 
       const elapsed = timestamp - this.scrollStart
       const el = this.$refs.text
       const range = el.scrollWidth - el.clientWidth
 
-      el.scroll(elapsed*0.05, 0)
+      el.scroll(elapsed*0.025, 0)
       if (el.scrollLeft < range) {
         window.requestAnimationFrame(this.scroll)
       } else {
-        setTimeout(() => this.startScroll(), 3500)
+        setTimeout(() => {
+          el.scroll(0, 0)
+          setTimeout(() => this.startScroll(), 1500)
+        }, 1500)
       }
 
     },
@@ -36,31 +49,15 @@ export default {
       this.scrollStart = null
       this.$refs.text.scroll(0, 0)
       window.requestAnimationFrame(this.scroll)
-    },
-    play (timestamp) {
-      if (this.start == null) this.start = timestamp
-      const elapsed = timestamp - this.start
-      this.progress = elapsed / this.duration
-      if (elapsed < this.duration) {
-        window.requestAnimationFrame(this.scroll)
-      } else {
-        setTimeout(() => this.startScroll(), 3500)
-      }
-
-    },
-    startSong () {
-      this.start = null
-      this.$refs.text.scroll(0, 0)
-      window.requestAnimationFrame(this.scroll)
     }
   },
   computed: {
     progress_text () {
+      let progress = 100*this.$store.state.time / this.song.duration
       let text = 'background: linear-gradient(90deg, #bce6be '
-      return text + `${this.progress}%, #ffffff00 ${this.progress}%)`
+      return text + `${progress}%, #ffffff00 ${progress}%)`
     },
     song () { return this.$store.state.song },
-    playing () { return this.$store.state.playing },
     duration () { return this.song.duration*1000 }
   },
   mounted () {
@@ -83,6 +80,14 @@ export default {
   padding: 2px;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.songbar-text-item {
+  margin-right: 20px;
+}
+
+.songbar-text-item:last-child {
+  margin-right: 0px;
 }
 
 .songbar-back {

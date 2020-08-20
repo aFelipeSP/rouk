@@ -1,7 +1,7 @@
 <template>
   <div class="main-layout">
     <div style="box-shadow: 0px -4px 10px -1px rgba(0,0,0,0.2)">
-      <a-song-bar v-if="song != null" :progress="progress" :song="song"/>
+      <a-song-bar v-if="song != null"/>
       <a-player />
     </div>
     <div style="flex: 1;overflow: auto">
@@ -25,12 +25,7 @@ export default {
     }
   },
   computed: {
-    song () {
-      return this.$store.state.song
-    },
-    progress () {
-      return this.$store.state.time / this.song.duration
-    }
+    song () { return this.$store.state.song }
   }
 }
 </script>
