@@ -58,7 +58,8 @@ class Player:
 
         self.player_process = self.current_track = self.song = None
         self.playlist_type = self.playlist_id = self.playlist_size = None
-        self.new_songs_monitor = self.time = self.start_time = None
+        self.new_songs_monitor = self.start_time = None
+        self.time = 0
         self.playing = False
         self.playlist = []
         self.subscribers = []
@@ -74,12 +75,17 @@ class Player:
         self.server.settimeout(0)
 
     def emit_state(self):
+
+        time_ = self.time
+        if self.playing:
+            time_ += time.time() - self.start_time
+
         msg = json.dumps(dict(
             playlistType = self.playlist_type,
             playlistId = self.playlist_id,
             song = self.song,
             track = self.current_track,
-            time = None if self.start_time is None else time.time() - self.start_time,
+            time = time_,
             playing = self.playing
         ))
 
@@ -107,21 +113,19 @@ class Player:
         file_ = Path(self.song['root']) / self.song['filename']
         command = ['omxplayer', '-o', 'alsa', str(file_)]
         self.player_process = Popen(command, stdin=PIPE, stdout=PIPE, bufsize=0)
+        self.playing = True
+        self.time = 0
         self.start_time = time.time()
 
     def next_song(self):
-        if self.playlist is None: return
-
-        self.end_song()
         if self.playlist_size == self.current_track + 1:
-            self.playing = False
             self.current_track = 0
         else:
             self.current_track += 1
             self.play_song()
         
         self.song = self.playlist[self.current_track]
-        self.update_current()
+        if self.playlist_id: self.update_current()
 
     def end_song(self):
         if self.player_process is None: return
@@ -129,6 +133,8 @@ class Player:
         self.player_process.kill()
         self.player_process.wait()
         self.player_process = None
+        self.playing = False
+        self.time = 0
 
     def update_current(self):
         with self.neo4j.session() as session:
@@ -139,6 +145,7 @@ class Player:
         if (not self.player_process is None and 
             not self.player_process.poll() is None
         ):
+            self.end_song()
             self.next_song()
 
         try:
@@ -154,49 +161,51 @@ class Player:
             except:
                 break
 
-        close_conn = change_playing = True
         code, content = [data[0], data[2:]]
 
-        if code in self.LABEL_CODES:
-            self.set_playlist(code, int(content))
-            self.play_song()
-        elif data[0] == 's':
-            self.playlist_id = None
-            self.playlist = None
-            with self.neo4j.session() as session:
-                self.song = session.read_transaction(get_song, int(content))
-            self.play_song()
-        elif data == 'q':
+        if code == 'i':
+            self.subscribers.append(conn)
+            return
+
+        conn.sendall(b'ok')
+        conn.shutdown(socket.SHUT_RDWR)
+        conn.close()
+
+        if code == 'q':
             return 'q'
-        elif data == 'p':
+        elif code == 'p':
             if not self.player_process is None and self.player_process.poll() is None:
                 self.player_process.stdin.write(b'p')
                 self.playing = not self.playing
-                change_playing = False
-        elif data == 'n':
+                current_time = time.time()
+                self.time = current_time - self.start_time
+                if self.playing:
+                    self.start_time = current_time
+            return
+
+        self.end_song()
+        if code in self.LABEL_CODES:
+            self.set_playlist(code, int(content))
+            self.play_song()
+        elif code == 's':
+            self.playlist_id = None
+            with self.neo4j.session() as session:
+                self.song = session.read_transaction(get_song, int(content))
+            self.current_track = 0
+            self.playlist = [self.song]
+            self.playlist_size = 1
+            self.play_song()
+        elif code == 'n':
             if self.playlist_id is None: return
             self.next_song()
-        elif data == 'l':
+        elif code == 'l':
             if self.playlist_id is None: return
-            self.end_song()
             self.current_track = max(0, self.current_track - 1)
             self.update_current()
             self.song = self.playlist[self.current_track]
             self.play_song()
-        elif data == 'r':
-            self.end_song()
+        elif code == 'r':
             self.play_song()
-        elif data == 'i':
-            self.subscribers.append(conn)
-            close_conn = False
-            change_playing = False
-
-        if change_playing: self.playing = True
-
-        if close_conn:
-            conn.sendall(b'ok')
-            conn.shutdown(socket.SHUT_RDWR)
-            conn.close()
 
     def run(self):
         self.create_server()
