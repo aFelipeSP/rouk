@@ -12,7 +12,7 @@ def set_current(tx, label, playlist_id, current):
     tx.run(query, id=playlist_id, current=current)
 
 
-@bp.route('/play/song/<int:id_>', methods=['POST'])
+@bp.route('/play/song/<string:id_>', methods=['POST'])
 def play_song(id_):
     send_request('s:'+id_)
     return Response('OK', 200)
