@@ -6,9 +6,10 @@ import time
 bp = Blueprint("artist", __name__, url_prefix='/api')
 
 def get_artist_tx(tx, id_):
-    query = ('MATCH (al:Album)-[:BY]->(a:Artist) WHERE id(a)=$id WITH al, a '
-        'ORDER BY al.year RETURN collect({id: id(al), name: al.name,'
-        'year: al.year}) as albums, a.name as name'
+    query = (
+        'MATCH (al:Album)-[:BY]->(a:Artist) WHERE id(a)=$id WITH al, a ORDER BY'
+        ' al.year RETURN id(a) as id, a.name as name collect({id: id(al),'
+        'name: al.name, year: al.year}) as albums'
     )
     return tx.run(query, id=id_).single().data()
 

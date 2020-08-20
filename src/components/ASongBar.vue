@@ -1,12 +1,12 @@
 <template>
   <div class="songbar">
-    <div class="songbar-back" :style="progress_text" />
+    <div ref="bar" class="songbar-back" />
     <div ref="text" class="songbar-text">
       <span class="songbar-text-item">
-        <b>{{song.track}}.&nbsp;{{song.name}}</b>,
+        <b>{{song.track ? (song.track + '.') : ''}}&nbsp;{{song.name}}</b>
       </span>
       <span class="songbar-text-item">
-        <b>Artist:&nbsp;</b>{{song.artist.name}},
+        <b>Artist:&nbsp;</b>{{song.artist.name}}
       </span>
       <span class="songbar-text-item">
         <b>Album:&nbsp;</b>{{song.album.name}}
@@ -24,6 +24,7 @@ export default {
   data () {
     return {
       scrollStart: null,
+      playStart: null
     }
   },
   methods: {
@@ -43,60 +44,82 @@ export default {
           setTimeout(() => this.startScroll(), 1500)
         }, 1500)
       }
-
     },
     startScroll () {
       this.scrollStart = null
       this.$refs.text.scroll(0, 0)
       window.requestAnimationFrame(this.scroll)
+    },
+    playFrame (timestamp) {
+      if (!this.playing) return
+      if (this.playStart == null) this.playStart = timestamp
+
+      const elapsed = this.time + timestamp - this.playStart
+      const el = this.$refs.bar
+
+      el.style.width = (100 * elapsed / this.duration) + '%'
+
+      if (elapsed < this.duration) {
+        window.requestAnimationFrame(this.playFrame)
+      } else {
+        el.style.width = '0%'
+      }
+    },
+    startPlay () {
+      this.playStart = null
+      this.$refs.bar.style.width = (100 * this.time / this.duration) + '%'
+      
+      if (this.playing) {
+        window.requestAnimationFrame(this.playFrame)
+      }
     }
   },
+  watch: {
+    update () { this.startPlay() }
+  },
   computed: {
-    progress_text () {
-      let progress = 100*this.$store.state.time / this.song.duration
-      let text = 'background: linear-gradient(90deg, #bce6be '
-      return text + `${progress}%, #ffffff00 ${progress}%)`
-    },
     song () { return this.$store.state.song },
-    duration () { return this.song.duration*1000 }
+    duration () { return this.song.duration*1000 },
+    playing () { return this.$store.state.playing },
+    time () { return this.$store.state.time*1000 },
+    update () { return this.$store.state.update }
   },
   mounted () {
     while (this.$refs.text == null) {
       //
     }
     this.startScroll()
+    this.startPlay()
   }
 }
 </script>
 
 <style>
+
 .songbar {
+  height: 25px;
+  width: 100%;
   position: relative;
-  height: 1.5em;
-  overflow: hidden;
 }
 
 .songbar-text {
-  padding: 2px;
+  position: absolute;
   overflow: hidden;
   white-space: nowrap;
+  width: 100%;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .songbar-text-item {
-  margin-right: 20px;
-}
-
-.songbar-text-item:last-child {
-  margin-right: 0px;
+  margin: 0px 10px;
 }
 
 .songbar-back {
-  z-index: -1;
-  position: absolute;
-  width: 100%;
+  background-color: #9de59d;
   height: 100%;
-  left: 0;
-  top: 0;
 }
+
 
 </style>

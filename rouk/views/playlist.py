@@ -4,10 +4,10 @@ from rouk.db import get_db
 bp = Blueprint("playlist", __name__, url_prefix='/api')
 
 def get_playlist_tx(tx, id_):
-    query = ('MATCH (s:Song)-[i:INCLUDED_IN]->(al:Playlist)'
-        'WHERE id(al)=$id WITH s, i, al ORDER BY i.track '
-        'RETURN collect({id: id(s), track:i.track, name: s.name,'
-        'duration: s.duration, year: s.year}) as songs, al.name as name'
+    query = ('MATCH (s:Song)-[i:INCLUDED_IN]->(al:Playlist) WHERE id(al)=$id '
+        'WITH s, i, al ORDER BY i.track RETURN id(al) as id, al.name as name, '
+        'collect({id: id(s), track: i.track, name: s.name, duration:s.duration,'
+        'year: s.year}) as songs'
     )
     return tx.run(query, id=id_).single().data()
 

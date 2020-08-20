@@ -7,9 +7,10 @@ bp = Blueprint("api", __name__, url_prefix='/api')
 
 
 def get_song_tx(tx, id_):
-    query = ('MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
-        ' WHERE ID(s)=$id RETURN s.name as name, s.duration as duration,'
-        's.year as year, {id: id(a), name: a.name} as artist,'
+    query = (
+        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
+        ' WHERE ID(s)=$id RETURN id(s) as id, s.name as name, s.duration as '
+        'duration, s.year as year, {id: id(a), name: a.name} as artist,'
         '{id: id(al), name: al.name} as album'
     )
     return tx.run(query, id=id_).single().data()

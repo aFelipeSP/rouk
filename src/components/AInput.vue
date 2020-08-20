@@ -231,7 +231,7 @@ export default {
         try {
           range.setEnd(node.firstChild, count)
         } catch {
-          console.log(345365)
+          //
         }
       }
       range.collapse(false)

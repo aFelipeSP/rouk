@@ -25,12 +25,12 @@ export default {
   },
   methods: {
     play () {
-      axios.post(`/api/play/playlist/${this.playlist.id}`).then(
+      axios.post(`/api/play/playlist/${this.$route.params.id}`).then(
         () => console.log('playing playlist')
       )
     },
     delete_ () {
-      axios.delete(`/api/playlist/${this.playlist.id}`).then(
+      axios.delete(`/api/playlist/${this.$route.params.id}`).then(
         () => console.log('deleted')
       )
     }

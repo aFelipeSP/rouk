@@ -27,7 +27,7 @@ export default {
   },
   methods: {
     play () {
-      axios.post(`/api/play/album/${this.album.id}`).then(
+      axios.post(`/api/play/album/${this.$route.params.id}`).then(
         () => console.log('playing album')
       )
     },

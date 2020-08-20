@@ -1,4 +1,5 @@
 import json
+import random
 import socket
 import time
 import traceback
@@ -17,17 +18,16 @@ def init_app(app):
 
 def get_playlist(tx, relationship, playlist_type, playlist_id):
     query = (
-        'MATCH (al:Album)<-[i:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
+        'MATCH (al:Album)<-[:INCLUDED_IN]-(s:Song)-[:BY]->(a:Artist)'
         'MATCH (f:Folder)-[c:CONTAINS]->(s)-[i:{}]->(p:{}) WHERE id(p)=$id '
-        'WITH s, i, al, a, f, p, c ORDER BY i.track RETURN collect(id(s) as id,'
-        's.name as name, s.year as year, s.duration as duration,{id: id(a), '
-        'name: a.name} as artist, {id: id(al), name: al.name} as album, '
-        'f.path as root, c.name as filename, i.track as track) as songs, '
-        'p.current_track as track'
-    ).format(relationship, playlist_type)
+        'WITH s, i, al, a, f, p, c ORDER BY i.track RETURN collect({{id: id(s),'
+        'name: s.name, year: s.year, duration: s.duration, artist: {{id: id(a), '
+        'name: a.name}}, album: {{id: id(al), name: al.name}}, root: f.path, '
+        'filename: c.name, track: i.track}}) as songs, p.current_track as track'
+    ).format(relationship, playlist_type.capitalize())
 
     result = tx.run(query, id=playlist_id).single().data()
-    current_track = result['current_track'] - 1
+    current_track = result.get('current_track', 1) - 1
     return current_track, result['songs']
 
 def get_song(tx, id_):
@@ -60,7 +60,8 @@ class Player:
         self.playlist_type = self.playlist_id = self.playlist_size = None
         self.new_songs_monitor = self.start_time = None
         self.time = 0
-        self.playing = False
+        self.playing = self.random = False
+        self.already_played = set()
         self.playlist = []
         self.subscribers = []
 
@@ -68,7 +69,7 @@ class Player:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((
-            current_app.config.get('PLAYER_HOST', 'localhost'), 
+            current_app.config.get('PLAYER_HOST', 'localhost'),
             current_app.config.get('PLAYER_PORT', 9999)
         ))
         self.server.listen()
@@ -86,8 +87,11 @@ class Player:
             song = self.song,
             track = self.current_track,
             time = time_,
-            playing = self.playing
+            playing = self.playing,
+            random = self.random
         ))
+
+        print(msg)
 
         for subscriber in self.subscribers:
             try:
@@ -101,12 +105,17 @@ class Player:
 
     def set_playlist(self, code, id_):
         info = self.LABEL_CODES[code]
-        self.playlist_id = info[0]
+        self.playlist_type = info[0]
+        self.playlist_id = id_
         with self.neo4j.session() as session:
             self.current_track, self.playlist = session.read_transaction(
                 get_playlist, info[1], info[0], id_)
-        self.song = self.playlist[self.current_track]
+
         self.playlist_size = len(self.playlist)
+        if self.random:
+            self.current_track = random.randrange(self.playlist_size)
+
+        self.song = self.playlist[self.current_track]
         self.playing = True
 
     def play_song(self):
@@ -118,20 +127,37 @@ class Player:
         self.start_time = time.time()
 
     def next_song(self):
-        if self.playlist_size == self.current_track + 1:
-            self.current_track = 0
+
+        if self.random:
+            if self.playlist_size == len(self.already_played) + 1:
+                self.current_track = random.randrange(self.playlist_size)
+                self.song = self.playlist[self.current_track]
+            else:
+                self.current_track = random.choice([
+                    i for i in range(0,self.playlist_size)
+                    if i not in self.already_played
+                ])
+                self.song = self.playlist[self.current_track]
+                self.play_song()
         else:
-            self.current_track += 1
-            self.play_song()
-        
-        self.song = self.playlist[self.current_track]
-        if self.playlist_id: self.update_current()
+            if self.playlist_size == self.current_track + 1:
+                self.current_track = 0
+                self.song = self.playlist[self.current_track]
+            else:
+                self.current_track += 1
+                self.song = self.playlist[self.current_track]
+                self.play_song()
+
+            if self.playlist_id: self.update_current()
 
     def end_song(self):
         if self.player_process is None: return
-        self.player_process.stdin.write(b'q')
-        self.player_process.kill()
-        self.player_process.wait()
+        try:
+            self.player_process.stdin.write(b'q')
+            self.player_process.kill()
+            self.player_process.wait()
+        except:
+            pass
         self.player_process = None
         self.playing = False
         self.time = 0
@@ -142,11 +168,12 @@ class Player:
                 self.playlist_id, self.current_track)
 
     def process(self):
-        if (not self.player_process is None and 
+        if (not self.player_process is None and
             not self.player_process.poll() is None
         ):
             self.end_song()
             self.next_song()
+            self.emit_state()
 
         try:
             conn, _ = self.server.accept()
@@ -165,6 +192,7 @@ class Player:
 
         if code == 'i':
             self.subscribers.append(conn)
+            self.emit_state()
             return
 
         conn.sendall(b'ok')
@@ -173,7 +201,9 @@ class Player:
 
         if code == 'q':
             return 'q'
-        elif code == 'p':
+
+
+        if code == 'p':
             if not self.player_process is None and self.player_process.poll() is None:
                 self.player_process.stdin.write(b'p')
                 self.playing = not self.playing
@@ -182,13 +212,16 @@ class Player:
                     self.start_time = current_time
                 else:
                     self.time += current_time - self.start_time
-            return
-
-        self.end_song()
-        if code in self.LABEL_CODES:
+            elif self.song:
+                self.play_song()
+        elif code == 'd':
+            self.random = not self.random
+        elif code in self.LABEL_CODES:
+            self.end_song()
             self.set_playlist(code, int(content))
             self.play_song()
         elif code == 's':
+            self.end_song()
             self.playlist_id = None
             with self.neo4j.session() as session:
                 self.song = session.read_transaction(get_song, int(content))
@@ -198,15 +231,27 @@ class Player:
             self.play_song()
         elif code == 'n':
             if self.playlist_id is None: return
+            self.end_song()
             self.next_song()
         elif code == 'l':
             if self.playlist_id is None: return
-            self.current_track = max(0, self.current_track - 1)
-            self.update_current()
+            self.end_song()
+            if self.random:
+                self.current_track = random.choice([
+                    i for i in range(0,self.playlist_size)
+                    if i not in self.already_played
+                ])
+            else:
+                self.current_track = max(0, self.current_track - 1)
+                self.update_current()
             self.song = self.playlist[self.current_track]
             self.play_song()
         elif code == 'r':
+            self.end_song()
             self.play_song()
+
+
+        self.emit_state()
 
     def run(self):
         self.create_server()
@@ -214,7 +259,6 @@ class Player:
             while True:
                 time.sleep(0.1)
                 res = self.process()
-                self.emit_state()
                 if res == 'q': break
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
@@ -226,9 +270,10 @@ class Player:
             self.server.close()
 
             print('server closed')
-            
+
             for subscriber in self.subscribers:
                 try:
+                    subscriber.sendall(b'end')
                     subscriber.shutdown(socket.SHUT_RDWR)
                     subscriber.close()
                 except:

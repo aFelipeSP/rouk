@@ -24,7 +24,7 @@ export default {
   },
   methods: {
     play () {
-      axios.post(`/api/play/artist/${this.artist.id}`).then(
+      axios.post(`/api/play/artist/${this.$route.params.id}`).then(
         () => console.log('playing artist')
       )
     }

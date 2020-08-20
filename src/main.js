@@ -27,10 +27,11 @@ axios.interceptors.response.use(function (response) {
 
 Vue.config.productionTip = false
 
-initSSE()
-
 new Vue({
   router,
   store,
-  render: h => h(App)
+  render: h => h(App),
+  mounted () {
+    initSSE()
+  }
 }).$mount('#app')

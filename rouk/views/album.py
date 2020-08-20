@@ -4,11 +4,12 @@ from rouk.db import get_db
 bp = Blueprint("album", __name__, url_prefix='/api')
 
 def get_album_tx(tx, id_):
-    query = ('MATCH (s:Song)-[i:INCLUDED_IN]->(al:Album)-[:BY]->(a:Artist)'
+    query = (
+        'MATCH (s:Song)-[i:INCLUDED_IN]->(al:Album)-[:BY]->(a:Artist)'
         'WHERE id(al)=$id WITH s, i, al, a order by i.track '
-        'RETURN collect({id: id(s), track:i.track, name: s.name,'
-        'duration: s.duration, year: s.year}) as songs, al.name as name,'
-        '{name: a.name, id:id(a)} as artist'
+        'RETURN id(al) as id, al.name as name, collect({id: id(s),'
+        'track:i.track, name: s.name, duration: s.duration, year: s.year}) '
+        'as songs, {name: a.name, id:id(a)} as artist'
     )
     return tx.run(query, id=id_).single().data()
 

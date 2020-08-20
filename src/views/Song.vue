@@ -12,6 +12,8 @@
     </div>
     <div class="song-property"><b>Year:</b> {{song.year}}</div>
     <div class="song-property"><b>Duration:</b> {{duration}}</div>
+    <div class="song-property"><b>Folder:</b> {{song.root}}</div>
+    <div class="song-property"><b>File name:</b> {{song.filename}}</div>
   </div>
 </template>
 

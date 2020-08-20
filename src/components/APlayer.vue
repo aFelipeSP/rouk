@@ -2,7 +2,11 @@
   <div class="player">
     <div class="player-button" @click="home"><icon-home /></div>
     <div class="player-button" @click="update"><icon-update /></div>
-    <div class="player-button" @click="random"><icon-random /></div>
+    <div :style="random ? 'background-color: #dddddd':''" 
+      class="player-button" @click="toggleRandom"
+    >
+      <icon-random />
+    </div>
     <div class="player-button" @click="last"><icon-last /></div>
     <div class="player-play" @click="togglePlay">
       <icon-pause v-if="playing"/>
@@ -58,7 +62,7 @@ export default {
     update () {
       axios.post('/api/update')
     },
-    random () {
+    toggleRandom () {
       axios.post('/api/random')
     },
     last () {
@@ -84,7 +88,8 @@ export default {
   },
   computed: {
     playing () { return this.$store.state.playing },
-    song () { return this.$store.state.song }
+    song () { return this.$store.state.song },
+    random () { return this.$store.state.random }
   }
 }
 </script>
