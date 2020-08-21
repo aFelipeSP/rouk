@@ -8,7 +8,7 @@
       <div @click="play" class="btn-rnd --c-b-green">Play</div>
     </div>
     <div style="font-size:120%;font-weight:bold;margin:20px 0px;">Songs</div>
-    <a-list label="song" :data="album.songs" />
+    <a-list label="song" :data="album.songs" :current="current" />
   </div>
 </template> 
 
@@ -22,7 +22,8 @@ export default {
   },
   data () {
     return {
-      album: {}
+      album: {},
+      current: false
     }
   },
   methods: {
@@ -39,6 +40,8 @@ export default {
   },
   mounted () {
     let id = this.$route.params.id
+    let s = this.$store.state
+    if (s.playlistType === 'album' && s.playlistId === id) this.current = true
     axios.get(`/api/album/${id}`).then(res => this.album = res.data)
   }
 }

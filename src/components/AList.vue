@@ -4,6 +4,10 @@
       v-for="(item, j) in data"
       :key="'l' + j"
       class="a-item"
+      :style="
+        isCurrent && currentTrack === item.id
+        ? 'background-color: #9de59d' : ''
+      "
     >
       <div style="flex:1" @click="goTo(item.id)">
         <div class="a-item-name" v-text="item.name" />
@@ -43,7 +47,8 @@ export default {
     label: {
       type: String,
       validator: (v) => ['playlist', 'artist', 'song', 'album'].includes(v)
-    }
+    },
+    current: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -63,6 +68,14 @@ export default {
     // eslint-disable-next-line no-unused-vars
     goTo (id_) {
       this.$router.push({ name: this.label, params: {id: id_}}).catch(()=>{})
+    }
+  },
+  computed: {
+    currentTrack () {
+      return (this.$store.state.song || {}).id
+    },
+    isCurrent () {
+      return this.label === 'song' && this.current
     }
   }
 }

@@ -1,17 +1,25 @@
 <template>
   <div class="songbar">
-    <div ref="bar" class="songbar-back" />
-    <div ref="text" class="songbar-text">
-      <span class="songbar-text-item">
-        <b>{{song.track ? (song.track + '.') : ''}}&nbsp;{{song.name}}</b>
-      </span>
-      <span class="songbar-text-item">
-        <b>Artist:&nbsp;</b>{{song.artist.name}}
-      </span>
-      <span class="songbar-text-item">
-        <b>Album:&nbsp;</b>{{song.album.name}}
-      </span>
-      <span class="songbar-text-item"><b>Year:&nbsp;</b>{{song.year}}</span>
+    <div style="margin: 0px 6px">{{elapsedText}}</div>
+    <div class="songbar-bar">
+      <div ref="bar" class="songbar-back" />
+      <div ref="text" class="songbar-text">
+        <span class="songbar-text-item">
+          <b>{{song.track ? (song.track + '.') : ''}}&nbsp;{{song.name}}</b>
+        </span>
+        <span class="songbar-text-item">
+          <b>Artist:&nbsp;</b>{{song.artist.name}}
+        </span>
+        <span class="songbar-text-item">
+          <b>Album:&nbsp;</b>{{song.album.name}}
+        </span>
+        <span class="songbar-text-item"><b>Year:&nbsp;</b>{{song.year}}</span>
+      </div>
+    </div>
+    <div @click="goToCurrent" 
+      style="margin:0px 6px;display:flex;border:1px solid currentcolor;width:1.3em;height:1.3em;align-items:center;justify-content:center"
+    >
+      <div>i</div>
     </div>
   </div>
 </template>
@@ -19,12 +27,14 @@
 
 <script>
 // import axios from 'axios'
+import { minsAndSecs } from '@/utils.js'
 
 export default {
   data () {
     return {
       scrollStart: null,
-      playStart: null
+      playStart: null,
+      elapsed: 0
     }
   },
   methods: {
@@ -54,12 +64,12 @@ export default {
       if (!this.playing) return
       if (this.playStart == null) this.playStart = timestamp
 
-      const elapsed = this.time + timestamp - this.playStart
+      this.elapsed = this.time + timestamp - this.playStart
       const el = this.$refs.bar
 
-      el.style.width = (100 * elapsed / this.duration) + '%'
+      el.style.width = (100 * this.elapsed / this.duration) + '%'
 
-      if (elapsed < this.duration) {
+      if (this.elapsed < this.duration) {
         window.requestAnimationFrame(this.playFrame)
       } else {
         el.style.width = '0%'
@@ -70,8 +80,15 @@ export default {
       this.$refs.bar.style.width = (100 * this.time / this.duration) + '%'
       
       if (this.playing) {
+        this.elapsed = 0
         window.requestAnimationFrame(this.playFrame)
       }
+    },
+    goToCurrent () {
+      this.$router.push({
+        name: this.$store.state.playlistType,
+        params: {id: this.$store.state.playlistId}
+      }).catch(() => {})
     }
   },
   watch: {
@@ -82,7 +99,8 @@ export default {
     duration () { return this.song.duration*1000 },
     playing () { return this.$store.state.playing },
     time () { return this.$store.state.time*1000 },
-    update () { return this.$store.state.update }
+    update () { return this.$store.state.update },
+    elapsedText () { return minsAndSecs(this.elapsed/1000) }
   },
   mounted () {
     while (this.$refs.text == null) {
@@ -95,11 +113,18 @@ export default {
 </script>
 
 <style>
-
 .songbar {
-  height: 25px;
-  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+
+
+.songbar-bar {
+  flex: 1;
   position: relative;
+  height: 1.5em;
+  overflow: hidden;
 }
 
 .songbar-text {

@@ -19,6 +19,7 @@
 
 <script>
 import axios from 'axios'
+import { minsAndSecs } from '@/utils.js'
 
 export default {
   data () {
@@ -43,11 +44,7 @@ export default {
     artist () { return (this.song.artist || {}).name },
     album () { return (this.song.album || {}).name },
     duration () {
-      let d = this.song.duration
-      let mins_ = d / 60
-      let mins = Math.trunc(mins_)
-      let secs = Math.round((mins_ - mins) * 60).toString().padStart(2, '0')
-      return `${mins}:${secs}`
+      return minsAndSecs(this.song.duration)
     }
   },
   mounted () {

@@ -219,8 +219,9 @@ class Player:
             self.set_playlist(code, int(content))
             self.play_song()
         elif code == 's':
+            self.playlist_type = 'song'
             self.end_song()
-            self.playlist_id = None
+            self.playlist_id = int(content)
             with self.neo4j.session() as session:
                 self.song = session.read_transaction(get_song, int(content))
             self.current_track = 0
@@ -228,11 +229,11 @@ class Player:
             self.playlist_size = 1
             self.play_song()
         elif code == 'n':
-            if self.playlist_id is None: return
+            if not self.playlist_type in ['playlist', 'album', 'artist']: return
             self.end_song()
             self.next_song()
         elif code == 'l':
-            if self.playlist_id is None: return
+            if not self.playlist_type in ['playlist', 'album', 'artist']: return
             self.end_song()
             if self.random:
                 self.current_track = random.choice([

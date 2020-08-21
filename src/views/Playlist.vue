@@ -6,7 +6,7 @@
       <div @click="delete_" class="btn-rnd --c-b-red">Delete</div>
     </div>
     <div style="font-size:120%;font-weight:bold;margin:20px 0px;">Songs</div>
-    <a-list label="song" :data="playlist.songs" />
+    <a-list label="song" :data="playlist.songs" :current="current" />
   </div>
 </template> 
 
@@ -20,7 +20,8 @@ export default {
   },
   data () {
     return {
-      playlist: {}
+      playlist: {},
+      current: false
     }
   },
   methods: {
@@ -37,6 +38,8 @@ export default {
   },
   mounted () {
     let id = this.$route.params.id
+    let s = this.$store.state
+    if (s.playlistType === 'playlist' && s.playlistId === id) this.current = true
     axios.get(`/api/playlist/${id}`).then(res => this.playlist = res.data)
   }
 }
