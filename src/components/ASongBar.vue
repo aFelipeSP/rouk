@@ -1,6 +1,6 @@
 <template>
   <div class="songbar">
-    <div style="margin: 0px 6px">{{elapsedText}}</div>
+    <div style="margin: 0px 6px;font-size:80%">{{elapsedText}}</div>
     <div class="songbar-bar">
       <div ref="bar" class="songbar-back" />
       <div ref="text" class="songbar-text">
@@ -16,9 +16,7 @@
         <span class="songbar-text-item"><b>Year:&nbsp;</b>{{song.year}}</span>
       </div>
     </div>
-    <div @click="goToCurrent" 
-      style="margin:0px 6px;display:flex;border:1px solid currentcolor;width:1.3em;height:1.3em;align-items:center;justify-content:center"
-    >
+    <div @click="goToCurrent" class="songbar-info">
       <div>i</div>
     </div>
   </div>
@@ -116,8 +114,23 @@ export default {
 .songbar {
   display: flex;
   align-items: center;
+  background-color: #f1f1f1;
 }
 
+.songbar-info {
+  margin: 0px 7px;
+  display: flex;
+  border: 2px solid currentcolor;
+  width: 1.5em;
+  height: 1.5em;
+  align-items: center;
+  justify-content: center;
+  font-size: 90%;
+  font-family: monospace;
+  border-radius: 99999px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
 
 .songbar-bar {
@@ -125,6 +138,7 @@ export default {
   position: relative;
   height: 1.5em;
   overflow: hidden;
+  background-color: white;
 }
 
 .songbar-text {

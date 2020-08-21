@@ -5,7 +5,6 @@ import time
 import traceback
 from pathlib import Path
 from subprocess import PIPE, Popen
-from threading import Thread
 
 import click
 from flask import current_app
@@ -55,6 +54,8 @@ class Player:
 
     def __init__(self, *args, **kwargs):
         self.neo4j = get_db()
+
+        self.stop = False
 
         self.player_process = self.current_track = self.song = None
         self.playlist_type = self.playlist_id = self.playlist_size = None
@@ -152,7 +153,6 @@ class Player:
         if self.player_process is None: return
         try:
             self.player_process.stdin.write(b'q')
-            self.player_process.kill()
             self.player_process.wait()
         except:
             pass
@@ -196,10 +196,6 @@ class Player:
         conn.sendall(b'ok')
         conn.shutdown(socket.SHUT_RDWR)
         conn.close()
-
-        if code == 'q':
-            return 'q'
-
 
         if code == 'p':
             if not self.player_process is None and self.player_process.poll() is None:
@@ -252,31 +248,33 @@ class Player:
 
         self.emit_state()
 
+    def teardown (self):
+        self.end_song()
+        self.server.shutdown(socket.SHUT_RDWR)
+        self.server.close()
+
+        for subscriber in self.subscribers:
+            try:
+                subscriber.sendall(b'end')
+                subscriber.shutdown(socket.SHUT_RDWR)
+                subscriber.close()
+            except:
+                pass
+        print('player closed')
+
     def run(self):
         self.create_server()
         try:
             while True:
+                if self.stop: break
                 time.sleep(0.1)
                 res = self.process()
-                if res == 'q': break
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
         except Exception:
             traceback.print_exc()
         finally:
-            self.end_song()
-            self.server.shutdown(socket.SHUT_RDWR)
-            self.server.close()
-
-            print('server closed')
-
-            for subscriber in self.subscribers:
-                try:
-                    subscriber.sendall(b'end')
-                    subscriber.shutdown(socket.SHUT_RDWR)
-                    subscriber.close()
-                except:
-                    pass
+            self.teardown()
 
 
 @click.command("player")

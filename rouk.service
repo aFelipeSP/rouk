@@ -3,7 +3,7 @@ Description=Control the music in your raspberry pi, from any browser in the intr
 
 [Service]
 Type=simple
-ExecStart=/bin/bash $ROUK_HOME/rouk.sh
+ExecStart=PYTHON/PATH $ROUK_HOME/rouk.py
 
 [Install]
 WantedBy=multi-user.target

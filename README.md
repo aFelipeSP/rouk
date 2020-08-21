@@ -29,21 +29,21 @@ Control the music in your raspberry pi, from any browser in the intranet.
     MUSIC_ROOT = '/home/pi/Music'
     ```
 1. `cd ..`
+1. Set flask current app: `export FLASK_APP=rouk`
 1. Create the music database for the app.
     ```
     flask update-library
     ```
     Run this command everytime you want to update your music library.
 1. (Optional) Create systemd service to run *rouk* as a service:
-    1. Modify `rouk.sh` file to activate your python environment as you want, and replace $ROUK_HOME with your actual path.
     1. `sudo cp rouk.service /etc/systemd/system/rouk.service`
-    1. Edit **ExecStart** at `/etc/systemd/system/rouk.service` to point to $ROUK_HOME.
+    1. Edit **ExecStart** at `/etc/systemd/system/rouk.service` to use python version you want and to point to rouk.py file inside $ROUK_HOME.
     1. `sudo chmod 644 /etc/systemd/system/rouk.service`
     1. `sudo systemctl enable myservice`
     1. Reebot.
 1. If you didn't make the last step, you can manually start the process:
     ```
-    ./rouk.sh
+    python ./rouk.py
     ```
 1. Open a browser in any computer connected to the same browser as your raspberry pi and go to the following address:
     ```
