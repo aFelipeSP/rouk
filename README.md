@@ -43,7 +43,7 @@ Control the music in your raspberry pi, from any browser in the intranet.
     1. Reebot.
 1. If you didn't make the last step, you can manually start the process:
     ```
-    python ./rouk.py
+    python rouk.py
     ```
 1. Open a browser in any computer connected to the same browser as your raspberry pi and go to the following address:
     ```
