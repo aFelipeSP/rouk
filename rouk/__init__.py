@@ -10,7 +10,9 @@ def create_app(test_config=None):
     CORS(app)
 
     app.config.from_mapping(
-        SECRET_KEY="dev"
+        SECRET_KEY="dev",
+        PLAYER_HOST="localhost",
+        PLAYER_PORT=9999
     )
 
     if test_config is None:
