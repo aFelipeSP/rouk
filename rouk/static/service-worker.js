@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/static/precache-manifest.b99fa4f78e0736d65da85c54023534a0.js"
+  "/static/precache-manifest.abab830871c4c9e03cc8ac713667355d.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "rouk"});

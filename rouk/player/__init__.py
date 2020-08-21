@@ -91,8 +91,6 @@ class Player:
             random = self.random
         ))
 
-        print(msg)
-
         for subscriber in self.subscribers:
             try:
                 subscriber.sendall(msg.encode('utf8'))
