@@ -39,7 +39,7 @@ Control the music in your raspberry pi, from any browser in the intranet.
     1. `sudo cp rouk.service /etc/systemd/system/rouk.service`
     1. Edit **ExecStart** at `/etc/systemd/system/rouk.service` to use python version you want and to point to rouk.py file inside $ROUK_HOME.
     1. `sudo chmod 644 /etc/systemd/system/rouk.service`
-    1. `sudo systemctl enable myservice`
+    1. `sudo systemctl enable rouk`
     1. Reebot.
 1. If you didn't make the last step, you can manually start the process:
     ```
