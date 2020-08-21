@@ -1,6 +1,6 @@
 <template>
   <div class="main-layout">
-    <div style="box-shadow: 0px -4px 10px -1px rgba(0,0,0,0.2)">
+    <div style="box-shadow: 0px -4px 10px -1px rgba(0,0,0,0.2);user-select: none;">
       <a-song-bar v-if="song != null"/>
       <a-player />
     </div>

@@ -1,6 +1,6 @@
 <template>
   <div class="library">
-    <div style="box-shadow: 0px 4px 10px -1px rgba(0,0,0,0.2)">
+    <div style="box-shadow: 0px 4px 10px -1px rgba(0,0,0,0.2);user-select: none;">
       <div class="library-search-options">
         <div
           v-for="(label_, i) in labels"
