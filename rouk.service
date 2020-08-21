@@ -1,8 +1,14 @@
 [Unit]
 Description=Control the music in your raspberry pi, from any browser in the intranet.
+Requires=neo4j.service
+After=network.target neo4j.service
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
+Restart=always
+RestartSec=1
+User=pi
 ExecStart=PYTHON/PATH $ROUK_HOME/rouk.py
 
 [Install]

@@ -53,8 +53,6 @@ class Player:
     }
 
     def __init__(self, *args, **kwargs):
-        self.neo4j = get_db()
-
         self.stop = False
 
         self.player_process = self.current_track = self.song = None
@@ -106,7 +104,7 @@ class Player:
         info = self.LABEL_CODES[code]
         self.playlist_type = info[0]
         self.playlist_id = id_
-        with self.neo4j.session() as session:
+        with get_db().session() as session:
             self.current_track, self.playlist = session.read_transaction(
                 get_playlist, info[1], info[0], id_)
 
@@ -161,7 +159,7 @@ class Player:
         self.time = 0
 
     def update_current(self):
-        with self.neo4j.session() as session:
+        with get_db().session() as session:
             session.write_transaction(set_current, self.playlist_type,
                 self.playlist_id, self.current_track)
 
@@ -218,7 +216,7 @@ class Player:
             self.playlist_type = 'song'
             self.end_song()
             self.playlist_id = int(content)
-            with self.neo4j.session() as session:
+            with get_db().session() as session:
                 self.song = session.read_transaction(get_song, int(content))
             self.current_track = 0
             self.playlist = [self.song]
