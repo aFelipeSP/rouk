@@ -29,5 +29,21 @@ export default new Vuex.Store({
     searchValue (state, value) { state.searchValue = value },
     loading (state, value) { state.loading = value },
     update (state, value) { state.update = value }
+  },
+  actions: {
+    updateState ({commit, state}, res) {
+      let data = null
+      try {
+        data = JSON.parse(res)
+      } catch {
+        //
+      }
+      if (data) {
+        for (let prop in data) {
+          commit(prop, data[prop])
+        }
+        commit('update', !state.update)
+      }
+    }
   }
 })

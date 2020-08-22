@@ -5,18 +5,7 @@ function initSSE () {
     let source = new EventSource('/api/stream')
   
     source.addEventListener('update', function(e) {
-      let data = null
-      try {
-        data = JSON.parse(e.data)
-      } catch {
-        //
-      }
-      if (data) {
-        for (let prop in data) {
-          store.commit(prop, data[prop])
-        }
-        store.commit('update', !store.state.update)
-      }
+      store.dispatch('updateState', e.data)
     }, false)
 
     source.addEventListener('close', function() {

@@ -8,7 +8,7 @@ def send_request(msg):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
         client.connect((conf['PLAYER_HOST'], conf['PLAYER_PORT']))
         client.sendall(msg.encode('utf8'))
-        return client.recv(1024)
+        return client.recv(4096).decode('utf8')
 
 @bp.route('/update', methods=['POST'])
 def update():
@@ -39,3 +39,18 @@ def next():
 def repeat():
     send_request('r')
     return Response('OK', 200)
+
+@bp.route('/position/<int:position>', methods=['POST'])
+def set_position(position):
+    send_request('k:'+str(position))
+    return Response('OK', 200)
+
+@bp.route('/volume/<int:volume>', methods=['POST'])
+def set_volume(volume):
+    send_request('v:'+str(volume))
+    return Response('OK', 200)
+
+@bp.route('/info')
+def get_info(volume):
+    msg = send_request('i')
+    return Response(msg, 200)

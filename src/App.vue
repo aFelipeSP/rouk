@@ -9,6 +9,7 @@
 
 <script>
 import APortal from '@/components/APortal'
+import axios from 'axios'
 
 export default {
   components: {
@@ -16,6 +17,15 @@ export default {
   },
   computed: {
     loading () { return this.$store.state.loading }
+  },
+  created () {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        axios.get('/api/info').then(res => {
+          this.$store.dispatch('updateState', res.data)
+        })
+      }
+    }, false)
   }
 }
 </script>

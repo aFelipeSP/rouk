@@ -4,7 +4,7 @@ import socket
 import time
 import traceback
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, run as sp_run
 
 import click
 from flask import current_app
@@ -44,6 +44,13 @@ def set_current(tx, playlist_type, playlist_id, current_track):
     query = 'MATCH (p:{}) WHERE id(p)=$id SET p.current_track=$current_track'.format(playlist_type)
     tx.run(query, id=playlist_id, current_track=current_track)
 
+def secs_to_song_format(t):
+    secs = int(t % 60)
+    mins_ = t / 60
+    mins = int(mins_ % 60)
+    hours = int(mins_/60)
+    return '{:0<2}:{:0<2}:{:0<2}'.format(hours, mins, secs)
+
 class Player:
 
     LABEL_CODES = {
@@ -74,13 +81,13 @@ class Player:
         self.server.listen()
         self.server.settimeout(0)
 
-    def emit_state(self):
-
+    @property
+    def state(self):
         time_ = self.time
         if self.playing:
             time_ += time.time() - self.start_time
 
-        msg = json.dumps(dict(
+        return json.dumps(dict(
             playlistType = self.playlist_type,
             playlistId = self.playlist_id,
             song = self.song,
@@ -88,11 +95,12 @@ class Player:
             time = time_,
             playing = self.playing,
             random = self.random
-        ))
+        )).encode('utf8')
 
+    def emit_state(self):
         for subscriber in self.subscribers:
             try:
-                subscriber.sendall(msg.encode('utf8'))
+                subscriber.sendall(self.state)
             except:
                 try:
                     subscriber.shutdown(socket.SHUT_RDWR)
@@ -101,6 +109,7 @@ class Player:
                     pass
 
     def set_playlist(self, code, id_):
+        self.already_played = set()
         info = self.LABEL_CODES[code]
         self.playlist_type = info[0]
         self.playlist_id = id_
@@ -115,13 +124,23 @@ class Player:
         self.song = self.playlist[self.current_track]
         self.playing = True
 
-    def play_song(self):
+    def play_song(self, position=None):
         file_ = Path(self.song['root']) / self.song['filename']
-        command = ['omxplayer', '-o', 'alsa', str(file_)]
+
+        command = ['omxplayer', '-o', 'alsa']
+        if position:
+            self.time = position
+            command += ['-l', secs_to_song_format(position)]
+        else:
+            self.time = 0
+        command += [str(file_)]
+
         self.player_process = Popen(command, stdin=PIPE, stdout=PIPE, bufsize=0)
         self.playing = True
-        self.time = 0
         self.start_time = time.time()
+
+    def set_volume(self, volume):
+        sp_run(['amixer', '-q', 'set', 'Master', str(volume)+'%'])
 
     def next_song(self):
 
@@ -134,6 +153,7 @@ class Player:
                     i for i in range(0,self.playlist_size)
                     if i not in self.already_played
                 ])
+                self.already_played.add(self.current_track)
                 self.song = self.playlist[self.current_track]
                 self.play_song()
         else:
@@ -191,9 +211,7 @@ class Player:
             self.emit_state()
             return
 
-        conn.sendall(b'ok')
-        conn.shutdown(socket.SHUT_RDWR)
-        conn.close()
+        msg = b'ok'
 
         if code == 'p':
             if not self.player_process is None and self.player_process.poll() is None:
@@ -230,19 +248,37 @@ class Player:
             if not self.playlist_type in ['playlist', 'album', 'artist']: return
             self.end_song()
             if self.random:
-                self.current_track = random.choice([
+                choices = [
                     i for i in range(0,self.playlist_size)
                     if i not in self.already_played
-                ])
+                ]
+                if len(choices) > 0:
+                    self.current_track = random.choice([
+                        i for i in range(0,self.playlist_size)
+                        if i not in self.already_played
+                    ])
+                    self.already_played.add(self.current_track)
+                    self.song = self.playlist[self.current_track]
+                    self.play_song()
             else:
                 self.current_track = max(0, self.current_track - 1)
                 self.update_current()
-            self.song = self.playlist[self.current_track]
-            self.play_song()
+                self.song = self.playlist[self.current_track]
+                self.play_song()
         elif code == 'r':
             self.end_song()
             self.play_song()
+        elif code == 'k':
+            self.end_song()
+            self.play_song(int(content))
+        elif code == 'v':
+            self.set_volume(int(content))
+        elif code == 'f':
+            msg = self.state
 
+        conn.sendall(msg)
+        conn.shutdown(socket.SHUT_RDWR)
+        conn.close()
 
         self.emit_state()
 
@@ -266,7 +302,7 @@ class Player:
             while True:
                 if self.stop: break
                 time.sleep(0.1)
-                res = self.process()
+                self.process()
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
         except Exception:
