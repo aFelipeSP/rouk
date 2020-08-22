@@ -140,7 +140,8 @@ class Player:
         self.start_time = time.time()
 
     def set_volume(self, s):
-        sp_run(['amixer', '-q', 'set', 'Master', '5%'+ ('+' if s==0 else '-')])
+        control = current_app.config.get('ALSA_VOLUME_CONTROL', 'Master')
+        sp_run(['amixer', '-q', 'set', control, s+'%'])
 
     def next_song(self):
 
@@ -272,7 +273,7 @@ class Player:
             self.end_song()
             self.play_song(int(content))
         elif code == 'v':
-            self.set_volume(int(content))
+            self.set_volume(content)
         elif code == 'f':
             msg = self.state
 

@@ -1,7 +1,7 @@
 <template>
   <div class="player">
     <div class="player-button" @click="home"><icon-home /></div>
-    <div class="player-button" @click="showVolume"><icon-volume />></div>
+    <div class="player-button" @click="showVolume = true"><icon-volume /></div>
     <div :style="random ? 'background-color: #dddddd':''"
       class="player-button" @click="toggleRandom"
     >
@@ -18,8 +18,7 @@
     <div class="player-button" @click="options"><icon-dots-v /></div>
     <a-playlist-song-modal v-model="playlistSongModal" :song="(song || {}).id"/>
     <a-modal v-model="showVolume">
-      <icon-plus style="cursor: pointer" @click="volume(true)" />
-      <icon-minus style="cursor: pointer" @click="volume(false)"/>
+      <input type="range" min="1" max="100" :value="volume" @input="volumeChanged">
     </a-modal>
   </div>
 </template>
@@ -36,7 +35,6 @@ import IconNext from '@/icons/next.vue'
 import IconRepeat from '@/icons/repeat.vue'
 import IconPlus from '@/icons/plus.vue'
 import IconDotsV from '@/icons/dotsV.vue'
-import IconMinus from '@/icons/minus.vue'
 import APlaylistSongModal from '@/components/APlaylistSongModal'
 import AModal from '@/components/AModal'
 
@@ -54,13 +52,15 @@ export default {
     IconRepeat,
     IconPlus,
     IconDotsV,
-    IconMinus,
     APlaylistSongModal,
     AModal
   },
   data () {
     return {
-      playlistSongModal: false
+      playlistSongModal: false,
+      showVolume: false,
+      volume: null,
+      volumeTimeoutId: null
     }
   },
   methods: {
@@ -93,8 +93,12 @@ export default {
     options () {
       this.$router.push({name: 'options'}).catch(() => {})
     },
-    volume (up) {
-      axios.post('/api/volume/' + (up ? '1' : '0'))
+    volumeChanged (e) {
+      this.volume = e.target.value
+      clearTimeout(this.volumeTimeoutId)
+      this.volumeTimeoutId = setTimeout( () => { 
+        axios.post('/api/volume/' + this.volume)
+      }, 500)
     }
   },
   computed: {

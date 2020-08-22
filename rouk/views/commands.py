@@ -46,6 +46,6 @@ def set_volume(mode):
     return Response('OK', 200)
 
 @bp.route('/info')
-def get_info(volume):
+def get_info():
     msg = send_request('i')
     return Response(msg, 200)
