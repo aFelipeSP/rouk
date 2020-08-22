@@ -9,10 +9,10 @@
         <polygon points="0 0, 1.5 1.2, 0 2.4" />
       </marker>
     </defs>
-    <path d="M0 0.3H0.25L0.65 0.7H0.81" fill="none" stroke-width="0.15"
+    <path d="M0 0.3H0.3L0.7 0.7H0.81" fill="none" stroke-width="0.15"
       marker-end="url(#arrowhead)" stroke-linejoin="round"
     />
-    <path d="M0 0.7H0.25L0.65 0.3H0.81" fill="none" stroke-width="0.15"
+    <path d="M0 0.7H0.3L0.7 0.3H0.81" fill="none" stroke-width="0.15"
       marker-end="url(#arrowhead)" stroke-linejoin="round"
     />
   </svg>

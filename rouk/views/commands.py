@@ -10,11 +10,6 @@ def send_request(msg):
         client.sendall(msg.encode('utf8'))
         return client.recv(4096).decode('utf8')
 
-@bp.route('/update', methods=['POST'])
-def update():
-    send_request('u')
-    return Response('OK', 200)
-
 @bp.route('/random', methods=['POST'])
 def random():
     send_request('d')
@@ -45,9 +40,9 @@ def set_position(position):
     send_request('k:'+str(position))
     return Response('OK', 200)
 
-@bp.route('/volume/<int:volume>', methods=['POST'])
-def set_volume(volume):
-    send_request('v:'+str(volume))
+@bp.route('/volume/<int:mode>', methods=['POST'])
+def set_volume(mode):
+    send_request('v:'+str(mode))
     return Response('OK', 200)
 
 @bp.route('/info')

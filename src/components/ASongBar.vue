@@ -1,7 +1,7 @@
 <template>
   <div class="songbar">
     <div style="margin: 0px 6px;font-size:80%">{{elapsedText}}</div>
-    <div class="songbar-bar">
+    <div ref="songbar" class="songbar-bar" @click="selectPosition">
       <div ref="bar" class="songbar-back" />
       <div ref="text" class="songbar-text">
         <span class="songbar-text-item">
@@ -24,7 +24,7 @@
 
 
 <script>
-// import axios from 'axios'
+import axios from 'axios'
 import { minsAndSecs } from '@/utils.js'
 
 export default {
@@ -87,6 +87,10 @@ export default {
         name: this.$store.state.playlistType,
         params: {id: this.$store.state.playlistId}
       }).catch(() => {})
+    },
+    selectPosition (e) {
+      let position = this.duration * e.clientX / this.$refs.songBar.offsetWidth
+      axios.post(`/position/${position}`)
     }
   },
   watch: {

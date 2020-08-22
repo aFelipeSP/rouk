@@ -139,8 +139,8 @@ class Player:
         self.playing = True
         self.start_time = time.time()
 
-    def set_volume(self, volume):
-        sp_run(['amixer', '-q', 'set', 'Master', str(volume)+'%'])
+    def set_volume(self, s):
+        sp_run(['amixer', '-q', 'set', 'Master', '5%'+ ('+' if s==0 else '-')])
 
     def next_song(self):
 

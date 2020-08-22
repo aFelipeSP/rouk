@@ -1,8 +1,8 @@
 <template>
   <div class="player">
     <div class="player-button" @click="home"><icon-home /></div>
-    <div class="player-button" @click="update"><icon-update /></div>
-    <div :style="random ? 'background-color: #dddddd':''" 
+    <div class="player-button" @click="showVolume"><icon-volume />></div>
+    <div :style="random ? 'background-color: #dddddd':''"
       class="player-button" @click="toggleRandom"
     >
       <icon-random />
@@ -17,13 +17,17 @@
     <div class="player-button" @click="addSong"><icon-plus /></div>
     <div class="player-button" @click="options"><icon-dots-v /></div>
     <a-playlist-song-modal v-model="playlistSongModal" :song="(song || {}).id"/>
+    <a-modal v-model="showVolume">
+      <icon-plus style="cursor: pointer" @click="volume(true)" />
+      <icon-minus style="cursor: pointer" @click="volume(false)"/>
+    </a-modal>
   </div>
 </template>
 
 
 <script>
 import IconHome from '@/icons/home.vue'
-import IconUpdate from '@/icons/update.vue'
+import IconVolume from '@/icons/volume.vue'
 import IconRandom from '@/icons/random.vue'
 import IconLast from '@/icons/last.vue'
 import IconPause from '@/icons/pause.vue'
@@ -32,14 +36,16 @@ import IconNext from '@/icons/next.vue'
 import IconRepeat from '@/icons/repeat.vue'
 import IconPlus from '@/icons/plus.vue'
 import IconDotsV from '@/icons/dotsV.vue'
+import IconMinus from '@/icons/minus.vue'
 import APlaylistSongModal from '@/components/APlaylistSongModal'
+import AModal from '@/components/AModal'
 
 import axios from 'axios'
 
 export default {
   components: {
     IconHome,
-    IconUpdate,
+    IconVolume,
     IconRandom,
     IconLast,
     IconPause,
@@ -48,7 +54,9 @@ export default {
     IconRepeat,
     IconPlus,
     IconDotsV,
-    APlaylistSongModal
+    IconMinus,
+    APlaylistSongModal,
+    AModal
   },
   data () {
     return {
@@ -84,6 +92,9 @@ export default {
     },
     options () {
       this.$router.push({name: 'options'}).catch(() => {})
+    },
+    volume (up) {
+      axios.post('/api/volume/' + (up ? '1' : '0'))
     }
   },
   computed: {
@@ -128,7 +139,7 @@ export default {
   background-color: #7e97af;
 }
 
-@media only screen and (min-width: 300px) {
+@media only screen and (min-width: 400px) {
   .player-button {
     padding: calc(var(--player-size)*0.6);
     flex: 0 1 auto;
