@@ -12,7 +12,7 @@ def get_song_tx(tx, id_):
         'WHERE id(s)=$id MATCH (f:Folder)-[c:CONTAINS]->(s) '
         'RETURN id(s) as id, s.name as name, s.duration as duration, '
         's.year as year, {id: id(a), name: a.name} as artist,'
-        '{id: id(al), name: al.name} as album'
+        '{id: id(al), name: al.name} as album,f.path as root,c.name as filename'
     )
     return tx.run(query, id=id_).single().data()
 
