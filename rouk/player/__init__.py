@@ -49,7 +49,7 @@ def secs_to_song_format(t):
     mins_ = t / 60
     mins = int(mins_ % 60)
     hours = int(mins_/60)
-    return '{:0<2}:{:0<2}:{:0<2}'.format(hours, mins, secs)
+    return '{:0>2}:{:0>2}:{:0>2}'.format(hours, mins, secs)
 
 class Player:
 

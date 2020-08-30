@@ -89,8 +89,11 @@ export default {
       }).catch(() => {})
     },
     selectPosition (e) {
-      let position = this.duration * e.clientX / this.$refs.songBar.offsetWidth
-      axios.post(`/position/${position}`)
+      let el = this.$refs.songbar
+      let b = el.getBoundingClientRect()
+      let x = e.clientX - b.x
+      let position = Math.round(this.song.duration * x / el.offsetWidth)
+      axios.post(`/api/position/${position}`)
     }
   },
   watch: {

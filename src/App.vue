@@ -2,7 +2,7 @@
   <div id="app">
     <router-view/>
     <a-portal :value="loading">
-      <div class="loader" />
+      <div class="blank-cover" />
     </a-portal>
   </div>
 </template>
@@ -52,6 +52,18 @@ body {
   font-size: 80%;
   padding: 5px 10px;
   border-radius: 9999999px;
+}
+
+.blank-cover {
+  position: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  left: 0px;
+  top: 0px;
+  z-index: 5001;
 }
 
 /* width */
